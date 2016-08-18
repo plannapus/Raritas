@@ -1,0 +1,19 @@
+Version 0.3 (31/08/2015):
+- Added possibility to add a new species during the count.
+- Modified behaviour of ComboBoxes so that it is possible to click twice in a row on same species.
+- Modified aesthetic of ComboBoxes: now uses default size, but relative position of each combobox change dynamically.
+- Created function ComputeDiv (used 3 times) to shorten code.
+- Program doesn't prompt the user for saving div file after saving main file anymore but does it automatically by appending "Div_" to file name.
+- Made the frame stretchable but not shrinkable.
+
+Version 0.2 (27/08/2015):
+- Corrected Sizers aesthetic.
+- Corrected Bug with "Inspect Entries" (int to float!).
+- Corrected Bug with Collector's Curve and Rare Count Mode and thus modified how cumulative diversity is computed.
+- Changed the logic of Rare Count Mode: estimated specimens are now added at the end of the track and not at the beginning.
+- When saving finished count, if user didn't click on "Next Track" to finish the current track, program does end the track itself.
+- The config file is no longer an hidden file.
+- Added HTML help file.
+
+Version 0.1 (26/08/2015):
+- Simplified clone of BugCountDorina java program with additional capacity of saving/loading unfinished count.
