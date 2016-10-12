@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import os, time, csv, math, sys
+import os, time, csv, math, sys, re
 import wx
 import wx.html
 import wx.lib.mixins.listctrl as listmix
@@ -273,7 +273,7 @@ class CountingFrame(wx.Frame):
         if dlg.ShowModal() == wx.ID_OK:
             savefile1 = dlg.GetPath()
             a = csv.writer(open(savefile1,'w'),delimiter='\t')
-            for i in self.selection: 
+            for i in self.selection:
                 a.writerow([i['track'],i['species'],i['mode']])
             if self.mode=='rare':
                 for i in [k['species_name'] for k in self.All if k['Estimated']=='*']:
@@ -289,13 +289,13 @@ class CountingFrame(wx.Frame):
             ord_keys = ['Genus','GQ','Species','SQ','Subspecies','Author','HigherTaxon','Comment','Normal Count', 'Rare Count', 'Total', 'Estimated']
             if self.metadata['File Type:']=='O':
                 a.writerow(['SOD-OFF v.:','2.0b1','File Type', 'O', 'Fossil Group', self.metadata['Fossil Group:'],'','','','','',''])
-                a.writerow(['Source ID:','','Source Citation:','','Comments:','','','','','Site', self.metadata['Site'], ''])
-                a.writerow(['Entered By:', self.metadata['Entered By:'], 'Occ. D.type:', 'C', 'Key:','','','','','Hole', self.metadata['Hole'],''])
-                a.writerow(['Entry Date', self.metadata['Entry Date:'],'Leg:', self.metadata['Leg'], '', '', '', '', '', 'Core', self.metadata['Core'],''])
-                a.writerow(['Checked By:', '', 'Taxcode Type', '', '', '', '', '', '', 'Section', self.metadata['Section'],''])
-                a.writerow(['Check Date:', '', '', '', '', '', '', '', '', 'Interval', self.metadata['Interval'],''])
-                a.writerow(['Uploaded by:', '', '', '', '', '', '', '', '', 'Depth(mbsf)', '',''])
-                a.writerow(['Upload Date:', '', '', '', '', '', '', '', '', 'Abundance', '',''])
+                a.writerow(['Source:','','','','','','','','','Site', self.metadata['Site'], ''])
+                a.writerow(['Entered By:', self.metadata['Entered By:'], self.metadata['Entry Date:'],'Checked By:', '', '','','','','','Hole', self.metadata['Hole'],''])
+                a.writerow(['Leg Info:', self.metadata['Leg'],'', '', '', '', '', '', '', 'Core', self.metadata['Core'],''])
+                a.writerow(['', '', '', '', '', '', '', '', '', 'Section', self.metadata['Section'],''])
+                a.writerow(['Occurrences:', 'C', '', '', '', '', '', '', '', 'Interval', self.metadata['Interval'],''])
+                a.writerow(['Comments:',str(self.n_track)+' tracks observed', '', '', '', '', '', '', '', 'Depth(mbsf)', '',''])
+                a.writerow(['','', '', '', '', '', '', '', '', 'Abundance', '',''])
                 a.writerow(['', '', '', '', '', '', '', '', '', 'Preservation', '',''])
             elif self.metadata['File Type:']=='L':
                 a.writerow(['SOD-OFF v.:','2.0b1','File Type', 'L', 'Fossil Group', self.metadata['Fossil Group:'],'','','','','',''])
@@ -332,7 +332,7 @@ class CountingFrame(wx.Frame):
             b.writerow(('Specimens','Species'))
             x,y = self.ComputeDiv(self.selection,self.All,self.last_normal_track)
             p = zip(x,y)
-            for i in p: 
+            for i in p:
                 b.writerow(i)
         dlg.Destroy()
 
@@ -381,7 +381,7 @@ class CountingFrame(wx.Frame):
             a.writerow(('Specimens','Species'))
             x,y = self.ComputeDiv(self.selection,self.All,self.last_normal_track)
             p = zip(x,y)
-            for i in p: 
+            for i in p:
                 a.writerow(i)
         dlg.Destroy()
 
@@ -476,7 +476,7 @@ class HelpFrame(wx.Frame):
         html = wx.html.HtmlWindow(self)
         if getattr(sys, 'frozen', False):
             if re.search('/Contents/',sys.executable):
-                PATH = os.path.join(os.path.dirname(re.sub('/MacOS.+','',sys.executable)),'Resources')
+                PATH = os.path.join(re.sub('/MacOS.+','',sys.executable),'Resources')
             else:
                 PATH = os.path.dirname(sys.executable)
         else:

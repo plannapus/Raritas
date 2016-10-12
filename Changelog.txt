@@ -1,3 +1,6 @@
+Version 0.4 (05/09/2016):
+- Modified output file to follow SOD-OFF version 2b1. Added as comment the number of tracks counted.
+
 Version 0.3 (31/08/2015):
 - Added possibility to add a new species during the count.
 - Modified behaviour of ComboBoxes so that it is possible to click twice in a row on same species.
