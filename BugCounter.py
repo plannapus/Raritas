@@ -394,7 +394,7 @@ class CountingFrame(wx.Frame):
 class NewSpeciesDialog(wx.Dialog):
     def __init__(self, parent, list_map):
         wx.Dialog.__init__(self, parent, -1, 'Add new species to the list', size=(400,180))
-        flex = wx.FlexGridSizer(8,2,5,5)
+        flex = wx.FlexGridSizer(9,2,5,5)
         flex.Add(wx.StaticText(self, label= ' Genus: ', style=wx.ALIGN_LEFT))
         self.genus = wx.TextCtrl(self, size=(300,-1))
         flex.Add(self.genus)
