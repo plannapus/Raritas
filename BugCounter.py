@@ -8,24 +8,24 @@ import matplotlib
 matplotlib.use('wxagg')
 import matplotlib.pyplot as plt
 
-class CountingFrame(wx.Frame):
+class CountingFrame(wx.Frame): # Main Counting window
     def __init__(self, parent, title, config):
         wx.Frame.__init__(self, parent, size=(1000,1000), title="Bug Counter")
         self.panel = wx.Panel(self)
 
-        #Instantiating variables
-        self.n_track = 1
-        self.last_normal_track = 1
-        self.selection = []
-        self.mode = 'normal'
-        self.specimens = 0
-        self.dirname = os.path.dirname(os.path.realpath(config['Taxa File']))
-        self.All = []
-        self.metadata = config
+        # Instantiating variables
+        self.n_track = 1             # Number of Tracks (nb displayed on screen at any time)
+        self.last_normal_track = 1   # Last track in normal count mode
+        self.selection = []          # List of dictionaries: each dictionary is one counted specimen, along with the count mode and the track number it was found in
+        self.mode = 'normal'         # Current count mode
+        self.specimens = 0           # Number of counted specimens (nb displayed on screen at any time)
+        self.dirname = os.path.dirname(os.path.realpath(config['Taxa File'])) # Default directory for dialogs
+        self.All = []                # List of dictionaries: each dictionary corresponds to one species (i. e. one line in the taxa file)
+        self.metadata = config       # Metadata (sample name, etc.)
 
-        #Reading taxa file
+        # Reading taxa file
         taxafile = csv.reader(open(config['Taxa File'],'rUb'),delimiter='\t')
-        keys = taxafile.next()
+        keys = taxafile.next() #Line of column headers
         for i in taxafile:
             b = {}
             for k,v in zip(keys,i):
@@ -33,9 +33,9 @@ class CountingFrame(wx.Frame):
             self.All.append(b)
         for d in self.All:
             d['species_name'] = d['Genus']+d['GQ']+' '+d['Species']+d['SQ']+' '+d['Subspecies']
-            d['Normal Count'] = 0
-            d['Estimated'] = ''
-            d['Rare Count'] = 0
+            d['Normal Count'] = 0    # Number of times this species was counted in normal count mode
+            d['Estimated'] = ''      # Whether or not this species is discarded from rare count mode
+            d['Rare Count'] = 0      # Number of times this species was counted in rare count mode
         species_on_button = [k['species_name'] for k in self.All if k['onButton']=='y']
         abbreviations = [k['abbreviation'] for k in self.All if k['onButton']=='y']
         N = len(species_on_button)
@@ -76,7 +76,7 @@ class CountingFrame(wx.Frame):
             g1.Add(b,1,wx.ALL|wx.EXPAND,3)
         BigSizer.Add(g1, pos=(0,0), span=(1,1), flag=wx.EXPAND)
         Groups = set([k['HigherTaxon'] for k in self.All])
-        if ' ' in Groups: Groups.remove(' ')
+        if ' ' in Groups: Groups.remove(' ') #Remove unnamed groups
         if '' in Groups: Groups.remove('')
         Gsizer = wx.FlexGridSizer(len(Groups),2,5,5)
         self.list_map = {}
@@ -131,9 +131,9 @@ class CountingFrame(wx.Frame):
         self.SetMinSize(minSize)
         self.Show(True)
 
-    def AddSpecies(self, event):
-        nsd = NewSpeciesDialog(self, self.list_map)
-        if nsd.ShowModal() == wx.ID_OK:
+    def AddSpecies(self, event): # What happens when clicking 'Add a species'
+        nsd = NewSpeciesDialog(self, self.list_map) #Opens dialog
+        if nsd.ShowModal() == wx.ID_OK: #Grabs the data entered by the user
             d = {'Species': nsd.species.GetValue(),
                       'SQ': nsd.sq.GetValue(),
                       'Genus': nsd.genus.GetValue(),
@@ -149,12 +149,12 @@ class CountingFrame(wx.Frame):
                       'Rare Count': 0,
                       'species_name': nsd.genus.GetValue()+nsd.gq.GetValue()+' '+nsd.species.GetValue()+nsd.sq.GetValue()+' '+nsd.subspecies.GetValue()
                      }
-            self.All.append(d)
-            widg_to_mod = self.list_map[d['HigherTaxon']]
+            self.All.append(d) # Add the new species to 'self.All'
+            widg_to_mod = self.list_map[d['HigherTaxon']] # Modify stroller widgets accordingly
             widg_to_mod.Append(d['species_name'])
         nsd.Destroy()
 
-    def BClick(self, event): #What happens when clicking a button
+    def BClick(self, event): # What happens when clicking a button
         button = event.GetEventObject()
         d = button.GetName()
         self.selection.append({'species':d, 'track':self.n_track, 'mode':self.mode})
@@ -166,7 +166,7 @@ class CountingFrame(wx.Frame):
         self.t2.SetLabel(sp_text)
         self.sel.SetValue("\n".join(reversed([k['species'] for k in self.selection])))
 
-    def LSelect(self,event): #What happens when choosing from the list
+    def LSelect(self,event): # What happens when choosing from the list
         d = event.GetString()
         if [k['Estimated'] for k in self.All if k['species_name']==d][0] != '*':
             self.specimens += 1
@@ -177,34 +177,34 @@ class CountingFrame(wx.Frame):
                 sp_text = '%s specimen' % self.specimens
             self.t2.SetLabel(sp_text)
             self.sel.SetValue("\n".join(reversed([k['species'] for k in self.selection])))
-        else:
+        else: # If it is a discarded species, do not do anything
             self.sel.SetValue("!Species estimated in rare count mode\n"+"\n".join(reversed([k['species'] for k in self.selection])))
         event.GetEventObject().SetSelection(-1)
 
     def NextTrack(self, event): #What happens at track change
-    	if self.mode == 'normal':
+    	if self.mode == 'normal': # If still in normal count mode
             track_content = [k for k in self.selection if k['track']==self.n_track]
-            for i in self.All:
+            for i in self.All: # Add everything that was counted on this track to the Normal Count
                 i['Normal Count'] += len([k for k in track_content if k['species'] == i['species_name']])
             self.n_track += 1
-    	if self.mode == 'rare':
+    	if self.mode == 'rare': # If rare count mode
             track_content = [k for k in self.selection if k['track']==self.n_track]
             estimated = 0
             for i in self.All:
-                if i['Estimated']=='*':
+                if i['Estimated']=='*': # Compute the number of estimated discarded taxa
                     estimated_i = math.ceil(i['Normal Count']/self.last_normal_track)
                     i['Rare Count'] += estimated_i
                     estimated += estimated_i
-                else:
+                else: # And add the non-discarded one to the count
                     i['Rare Count'] += len([k for k in track_content if k['species'] == i['species_name']])
-            self.specimens += int(estimated)
+            self.specimens += int(estimated) # Add the number of estimated to the total number of specimen counted
             self.n_track += 1
         self.t2.SetLabel('%s specimens' % self.specimens)
         self.t1.SetLabel('Track %s' % self.n_track)
 
-    def RCM(self,event): #Switching to Rare Count Mode
+    def RCM(self,event): # Switching to Rare Count Mode
         self.mode = 'rare'
-        list_d =[]
+        list_d =[] # Prepare list of already counted species with their relative abundance for dialog
         for i in self.All:
             i['Normal Count'] = len([k for k in self.selection if k['species'] == i['species_name'] and k['mode']=='normal'])
             i['Percentage'] = float(i['Normal Count'])*100/float(len(self.selection))
@@ -215,7 +215,7 @@ class CountingFrame(wx.Frame):
         if (dlg.ShowModal() == wx.ID_OK):
             selections = dlg.GetSelections()
             strings = [list_d[x][0] for x in selections]
-            for j in self.All:
+            for j in self.All: # Flag chosen species as 'estimated'
                 if j['species_name'] in strings:
                     j['Estimated'] = '*'
             for i,b in self.button_map.items():
@@ -238,19 +238,19 @@ class CountingFrame(wx.Frame):
         if dlg.ShowModal() == wx.ID_OK:
             openfile = dlg.GetPath()
             a = csv.reader(open(openfile,'r'),delimiter='\t')
-            self.selection = []
+            self.selection = [] # Build back the 'selection' list of dictionaries
             for i in a:
                 if ' estimated' not in i[1]:
                     self.selection.append({'species':i[1], 'track':int(i[0]), 'mode':i[2]})
-                else:
+                else: # Flag back the taxa discarded from rare count mode
                     sp = i[1].split(' estimated')
                     for j in [k for k in self.All if k['species_name']==sp]:
                         j['Estimated'] = '*'
             self.n_track = max([k['track'] for k in self.selection])
-            for i in self.All:
+            for i in self.All: # Add back the taxa found in normal count mode
                 i['Normal Count'] = len([k for k in self.selection if k['species'] == i['species_name'] and k['mode']=='normal'])
             estimated = 0
-            if 'rare' in [k['mode'] for k in self.selection]:
+            if 'rare' in [k['mode'] for k in self.selection]: # Add back the taxa found in rare count mode, including the estimated ones.
                 self.mode = 'rare'
                 self.last_normal_track = max([k['track'] for k in self.selection if k['mode']=='normal'])
                 for i in self.All:
@@ -267,7 +267,7 @@ class CountingFrame(wx.Frame):
             self.t1.SetLabel('Track %s' % self.n_track)
         dlg.Destroy()
 
-    def Save1(self, event): #Save unfinished count
+    def Save1(self, event): #Save unfinished count (simply right down object 'self.selection' to a file)
         wildcard = "Tab-separated files (*.csv)|*.csv"
         dlg = wx.FileDialog(self, 'Choose your file', self.dirname, wildcard=wildcard, style=wx.FD_SAVE)
         if dlg.ShowModal() == wx.ID_OK:
@@ -280,7 +280,7 @@ class CountingFrame(wx.Frame):
                     a.writerow(['',i+' estimated',''])
         dlg.Destroy()
 
-    def Save2(self, event): #Save finished count in SOD-OFF format
+    def Save2(self, event): #Save finished count in SOD format
         wildcard = "Tab-separated files (*.csv)|*.csv"
         dlg = wx.FileDialog(self, 'Choose your file for count data', self.dirname, wildcard=wildcard, style=wx.FD_SAVE)
         if dlg.ShowModal() == wx.ID_OK:
@@ -327,7 +327,7 @@ class CountingFrame(wx.Frame):
             for i in self.All:
                 i['Total'] =i['Normal Count']+i['Rare Count']
                 a.writerow([i[k] for k in ord_keys])
-            savefile3 = os.path.join(os.path.dirname(savefile2),'Div_'+os.path.basename(savefile2))
+            savefile3 = os.path.join(os.path.dirname(savefile2),'Div_'+os.path.basename(savefile2)) # Also saves a file containing the species accumulation curve
             b = csv.writer(open(savefile3,'w'),delimiter='\t')
             b.writerow(('Specimens','Species'))
             x,y = self.ComputeDiv(self.selection,self.All,self.last_normal_track)
@@ -336,7 +336,7 @@ class CountingFrame(wx.Frame):
                 b.writerow(i)
         dlg.Destroy()
 
-    def ComputeDiv(self,selection, All, last_normal_track):
+    def ComputeDiv(self,selection, All, last_normal_track): #Compute species accumulation curve from object self.selection
         x = [0,]
         y = [0,]
         sp = []
@@ -360,7 +360,7 @@ class CountingFrame(wx.Frame):
 
         return([x,y])
 
-    def SAC(self, event):
+    def SAC(self, event): # Plot species accumulation curve (uses matplotlib)
         x,y = self.ComputeDiv(self.selection,self.All,self.last_normal_track)
         plt.plot(x, y, color='red', marker='o')
         plt.ylabel('Number of Species')
@@ -369,10 +369,10 @@ class CountingFrame(wx.Frame):
         plt.show()
         self.Show(True)
 
-    def Inspect(self, event):
+    def Inspect(self, event): # Inspect countings so far (only updates at the end of every track!)
         ins = InspectFrame(None, title='Specimens counted', data1=self.All)
 
-    def Save3(self, event): #Unchecked
+    def Save3(self, event): # Save only the Species Accumulation Curve
         wildcard = "Tab-separated files (*.csv)|*.csv"
         dlg = wx.FileDialog(self, 'Choose your file', self.dirname, wildcard=wildcard, style=wx.FD_SAVE)
         if dlg.ShowModal() == wx.ID_OK:
@@ -385,13 +385,13 @@ class CountingFrame(wx.Frame):
                 a.writerow(i)
         dlg.Destroy()
 
-    def Quit(self,event):
+    def Quit(self,event): # Quit the counting window
         self.Close()
 
-    def Help(self,event):
+    def Help(self,event): # Display help file
         help = HelpFrame(None)
 
-class NewSpeciesDialog(wx.Dialog):
+class NewSpeciesDialog(wx.Dialog): # Dialog for adding a new species
     def __init__(self, parent, list_map):
         wx.Dialog.__init__(self, parent, -1, 'Add new species to the list', size=(400,180))
         flex = wx.FlexGridSizer(9,2,5,5)
@@ -432,7 +432,7 @@ class NewSpeciesDialog(wx.Dialog):
         self.SetSizerAndFit(flex)
         self.Layout()
 
-class InspectFrame(wx.Frame, listmix.ColumnSorterMixin):
+class InspectFrame(wx.Frame, listmix.ColumnSorterMixin): # Window for count inspection (sortable spreadsheet format)
     def __init__(self, parent, title, data1):
         wx.Frame.__init__(self, parent, size=(750,500), title="Entries so far")
         panel = wx.Panel(self, wx.ID_ANY)
@@ -470,11 +470,11 @@ class InspectFrame(wx.Frame, listmix.ColumnSorterMixin):
     def GetListCtrl(self):
         return self.list_ctrl
 
-class HelpFrame(wx.Frame):
+class HelpFrame(wx.Frame): # Help window
     def __init__(self, parent):
         wx.Frame.__init__(self, parent, size=(800,500))
         html = wx.html.HtmlWindow(self)
-        if getattr(sys, 'frozen', False):
+        if getattr(sys, 'frozen', False): #Find help file (varies from platform to platform)
             if re.search('/Contents/',sys.executable):
                 PATH = os.path.join(re.sub('/MacOS.+','',sys.executable),'Resources')
             else:
@@ -484,7 +484,7 @@ class HelpFrame(wx.Frame):
         html.LoadFile(os.path.join(PATH,'help.html'))
         self.Show()
 
-class StartingFrame(wx.Frame):
+class StartingFrame(wx.Frame): # Start window that collects metadata
     def __init__(self, parent):
         wx.Frame.__init__(self, parent, size= (600,250), title='BugCounter')
         #Preparing files
@@ -553,7 +553,7 @@ class StartingFrame(wx.Frame):
         sizButton2.Add(but2, pos=(0,0))
         topSizer.Add(sizButton1, pos=(4,0), span=(1,1),flag=wx.ALIGN_CENTER)
         topSizer.Add(sizButton2, pos=(6,0), span=(1,1),flag=wx.ALIGN_CENTER)
-        if self.config.get('Entered By:',False): self.ent2.SetValue(self.config['Entered By:'])
+        if self.config.get('Entered By:',False): self.ent2.SetValue(self.config['Entered By:']) #If metadata present in config file, preload the values
         if self.config.get('Fossil Group:',False): self.fg2.SetValue(self.config['Fossil Group:'])
         if self.config.get('Leg',False): self.l2.SetValue(self.config['Leg'])
         if self.config.get('Site',False): self.s2.SetValue(self.config['Site'])
@@ -568,14 +568,14 @@ class StartingFrame(wx.Frame):
         self.SetSizer(self.sizer)
         self.Show(True)
 
-    def LookUp(self, event):
+    def LookUp(self, event): # Dialog to select the taxa file
         self.dirname = os.path.dirname(os.path.realpath(self.filename))
         dlg = wx.FileDialog(self, 'Choose your file', self.dirname)
         if dlg.ShowModal() == wx.ID_OK:
             self.filedir.SetValue(dlg.GetPath())
         dlg.Destroy()
 
-    def Start(self, event):
+    def Start(self, event): # What happens when clicking Start
         # Save metadata
         filedir = self.filedir.GetValue()
         metadata = {'Entered By:':self.ent2.GetValue(),'Entry Date:':self.dat2.GetValue(),'File Type:':'O','Fossil Group:':self.fg2.GetValue(),'Leg':self.l2.GetValue(), 'Site':self.s2.GetValue(), 'Hole':self.h2.GetValue(), 'Core': self.c2.GetValue(), 'Section': self.sc2.GetValue(), 'Interval': self.int2.GetValue()}
@@ -586,13 +586,13 @@ class StartingFrame(wx.Frame):
         a = csv.writer(open(self.configfile,'w'),delimiter='\t')
         for i, j in self.config.items():
             a.writerow([i,j])
-        # Launch 2nd Frame
+        # Launch Counting window
         w = CountingFrame(None, title='BugCounter', config = self.config)
 
-    def Quit(self,event):
+    def Quit(self,event): #Quit the software
         self.Close()
 
-    def Help(self,event):
+    def Help(self,event): #Launch the help window
         help = HelpFrame(None)
 
 #Boilerplate
