@@ -450,27 +450,20 @@ class InspectFrame(wx.Frame, listmix.ColumnSorterMixin): # Window for count insp
         sizer.Add(warning)
         sizer.Add(self.list_ctrl, 0, wx.ALL|wx.EXPAND, 5)
         panel.SetSizer(sizer)
-        list_d ={}
-        ind = 0
+        list_d =[]
         for i in data1:
             total =i['Normal Count']+i['Rare Count']
             percent = float(total)*100/float((sum([k['Normal Count'] for k in data1])+sum([k['Rare Count'] for k in data1])))
-            list_d[ind] = (i['species_name'],i['Normal Count'], i['Rare Count'], total, str(round(percent,3))+' %')
-            ind +=1
-        items = list_d.items()
-        for key, data in items:
+            list_d.append((i['species_name'],i['Normal Count'], i['Rare Count'], total, str(round(percent,3))+' %'))
+        list_d.sort(key=lambda x:x[3], reverse=True)
+        for data in list_d:
             self.list_ctrl.InsertStringItem(self.index, data[0])
             self.list_ctrl.SetStringItem(self.index, 1, str(data[1]))
             self.list_ctrl.SetStringItem(self.index, 2, str(data[2]))
             self.list_ctrl.SetStringItem(self.index, 3, str(data[3]))
-            self.list_ctrl.SetStringItem(self.index, 4, str(data[4]))
-            self.list_ctrl.SetItemData(self.index, key)
+            self.list_ctrl.SetStringItem(self.index, 4, data[4])
             self.index += 1
-        self.itemDataMap = list_d
-        listmix.ColumnSorterMixin.__init__(self, 5)
         self.Show(True)
-    def GetListCtrl(self):
-        return self.list_ctrl
 
 class HelpFrame(wx.Frame): # Help window
     def __init__(self, parent):
