@@ -1,6 +1,7 @@
 Version 0.4 (05/09/2016):
 - Modified output file to follow SOD-OFF version 2b1. Added as comment the number of tracks counted.
 - Corrected filepath for help file.
+- Corrected discrepancies between Mac and PC ('Inspect' is still broken on PC though)
 
 Version 0.3 (31/08/2015):
 - Added possibility to add a new species during the count.
