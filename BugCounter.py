@@ -122,8 +122,10 @@ class CountingFrame(wx.Frame): # Main Counting window
         BigSizer.AddGrowableRow(0)
         BigSizer.AddGrowableRow(1)
         BigSizer.AddGrowableCol(0)
-        widthB, heightB = [math.ceil(N/n1)*105, n1*25]
-        widthR, heightR = [1050,260]
+        heightB = n1*30 if os.name=='nt' else n1*25
+        heightR = 300 if os.name=='nt' else 250
+        widthB = math.ceil(N/n1)*105
+        widthR = 1050
         self.SetSize((max([widthB, widthR]),heightB+heightR))
         self.panel.SetSizer(BigSizer)
         self.panel.Layout()
@@ -237,7 +239,7 @@ class CountingFrame(wx.Frame): # Main Counting window
         dlg = wx.FileDialog(self, 'Choose your file', self.dirname, wildcard=wildcard)
         if dlg.ShowModal() == wx.ID_OK:
             openfile = dlg.GetPath()
-            a = csv.reader(open(openfile,'r'),delimiter='\t')
+            a = csv.reader(open(openfile,'rb'),delimiter='\t')
             self.selection = [] # Build back the 'selection' list of dictionaries
             for i in a:
                 if ' estimated' not in i[1]:
@@ -272,7 +274,7 @@ class CountingFrame(wx.Frame): # Main Counting window
         dlg = wx.FileDialog(self, 'Choose your file', self.dirname, wildcard=wildcard, style=wx.FD_SAVE)
         if dlg.ShowModal() == wx.ID_OK:
             savefile1 = dlg.GetPath()
-            a = csv.writer(open(savefile1,'w'),delimiter='\t')
+            a = csv.writer(open(savefile1,'wb'),delimiter='\t')
             for i in self.selection:
                 a.writerow([i['track'],i['species'],i['mode']])
             if self.mode=='rare':
@@ -285,7 +287,7 @@ class CountingFrame(wx.Frame): # Main Counting window
         dlg = wx.FileDialog(self, 'Choose your file for count data', self.dirname, wildcard=wildcard, style=wx.FD_SAVE)
         if dlg.ShowModal() == wx.ID_OK:
             savefile2 = dlg.GetPath()
-            a = csv.writer(open(savefile2,'w'),delimiter='\t')
+            a = csv.writer(open(savefile2,'wb'),delimiter='\t')
             ord_keys = ['Genus','GQ','Species','SQ','Subspecies','Author','HigherTaxon','Comment','Normal Count', 'Rare Count', 'Total', 'Estimated']
             if self.metadata['File Type:']=='O':
                 a.writerow(['SOD-OFF v.:','2.0b1','File Type', 'O', 'Fossil Group', self.metadata['Fossil Group:'],'','','','','',''])
@@ -328,7 +330,7 @@ class CountingFrame(wx.Frame): # Main Counting window
                 i['Total'] =i['Normal Count']+i['Rare Count']
                 a.writerow([i[k] for k in ord_keys])
             savefile3 = os.path.join(os.path.dirname(savefile2),'Div_'+os.path.basename(savefile2)) # Also saves a file containing the species accumulation curve
-            b = csv.writer(open(savefile3,'w'),delimiter='\t')
+            b = csv.writer(open(savefile3,'wb'),delimiter='\t')
             b.writerow(('Specimens','Species'))
             x,y = self.ComputeDiv(self.selection,self.All,self.last_normal_track)
             p = zip(x,y)
@@ -377,7 +379,7 @@ class CountingFrame(wx.Frame): # Main Counting window
         dlg = wx.FileDialog(self, 'Choose your file', self.dirname, wildcard=wildcard, style=wx.FD_SAVE)
         if dlg.ShowModal() == wx.ID_OK:
             savefile3 = dlg.GetPath()
-            a = csv.writer(open(savefile3,'w'),delimiter='\t')
+            a = csv.writer(open(savefile3,'wb'),delimiter='\t')
             a.writerow(('Specimens','Species'))
             x,y = self.ComputeDiv(self.selection,self.All,self.last_normal_track)
             p = zip(x,y)
@@ -492,7 +494,7 @@ class StartingFrame(wx.Frame): # Start window that collects metadata
         self.configfile = os.path.join(os.path.expanduser('~'),"bugconfig.txt")
         self.filename = ''
         if os.path.exists(self.configfile):
-            a = csv.reader(open(self.configfile,'r'),delimiter='\t')
+            a = csv.reader(open(self.configfile,'rb'),delimiter='\t')
             for i in a:
                 if len(i)>1:
         		  self.config[i[0]] = i[1]
@@ -565,7 +567,7 @@ class StartingFrame(wx.Frame): # Start window that collects metadata
         self.StartingPanel.SetSizerAndFit(topSizer)
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer.Add(self.StartingPanel, 1, wx.EXPAND|wx.ALIGN_CENTER)
-        self.SetSizer(self.sizer)
+        self.SetSizerAndFit(self.sizer)
         self.Show(True)
 
     def LookUp(self, event): # Dialog to select the taxa file
@@ -583,7 +585,7 @@ class StartingFrame(wx.Frame): # Start window that collects metadata
         self.config['Taxa File'] = filedir
         if os.path.exists(self.configfile):
             os.remove(self.configfile)
-        a = csv.writer(open(self.configfile,'w'),delimiter='\t')
+        a = csv.writer(open(self.configfile,'wb'),delimiter='\t')
         for i, j in self.config.items():
             a.writerow([i,j])
         # Launch Counting window
