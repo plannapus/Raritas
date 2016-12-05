@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 class CountingFrame(wx.Frame): # Main Counting window
     def __init__(self, parent, title, config):
-        wx.Frame.__init__(self, parent, size=(1000,1000), title="Bug Counter")
+        wx.Frame.__init__(self, parent, size=(1000,1000), title="Raritas")
         self.panel = wx.Panel(self)
 
         # Instantiating variables
@@ -481,7 +481,7 @@ class HelpFrame(wx.Frame): # Help window
 
 class StartingFrame(wx.Frame): # Start window that collects metadata
     def __init__(self, parent):
-        wx.Frame.__init__(self, parent, size= (600,250), title='BugCounter')
+        wx.Frame.__init__(self, parent, size= (600,250), title='Raritas')
         #Preparing files
         self.config = {}
         self.configfile = os.path.join(os.path.expanduser('~'),"bugconfig.txt")
@@ -582,7 +582,7 @@ class StartingFrame(wx.Frame): # Start window that collects metadata
         for i, j in self.config.items():
             a.writerow([i,j])
         # Launch Counting window
-        w = CountingFrame(None, title='BugCounter', config = self.config)
+        w = CountingFrame(None, title='Raritas', config = self.config)
 
     def Quit(self,event): #Quit the software
         self.Close()
