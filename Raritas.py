@@ -304,13 +304,13 @@ class CountingFrame(wx.Frame): # Main Counting window
                 a.writerow(['', '', '', '', '', '', '', '', '', 'Preservation', '',''])
             elif self.metadata['File Type:']=='L':
                 a.writerow(['SOD-OFF v.:','2.0b1','File Type', 'L', 'Fossil Group', self.metadata['Fossil Group:'],'','','','','',''])
-                a.writerow(['Source ID:','','Source Citation:','','Comments:','','','','','Formation', self.metadata['Formation'], ''])
-                a.writerow(['Entered By:', self.metadata['Entered By:'], 'Occ. D.type:', 'C', 'Key:','','','','','Sample Name', self.metadata['Sample Name'],''])
-                a.writerow(['Entry Date', self.metadata['Entry Date:'],'Country:', self.metadata['Country'], '', '', '', '', '', 'Lithology', '',''])
-                a.writerow(['Checked By:', '', 'Latitude', self.metadata['Latitude'], '', '', '', '', '', 'Age', self.metadata['Age'],''])
-                a.writerow(['Check Date:', '', 'Longitude', self.metadata['Longitude'], '', '', '', '', '', 'Zone', self.metadata['Zone'],''])
-                a.writerow(['Uploaded by:', '', 'scale', '', '', '', '', '', '', 'meter level', self.metadata['meter level'],''])
-                a.writerow(['Upload Date:', '', '', '', '', '', '', '', '', 'Abundance', '',''])
+                a.writerow(['Source:','','Source Citation:','','','','','','','Formation', self.metadata['Formation'], ''])
+                a.writerow(['Entered By:', self.metadata['Entered By:'], self.metadata['Entry Date:'],'Checked By:', '', '','','','','Sample Name', self.metadata['Sample Name'],''])
+                a.writerow(['Location',self.metadata['Country'],'','', '', '', '', '', '', 'meter level', self.metadata['meter level'],''])
+                a.writerow(['Lat/Long:', self.metadata['Latitude'], self.metadata['Longitude'],'', '', '', '', '', '','Age', '',''])
+                a.writerow(['Occurrences:', 'C', '', '', '', '', '', '', '', 'Zone', '',''])
+                a.writerow(['Comments:', str(self.n_track)+' tracks observed', '', '', '', '', '', '', '', 'Lithology','',''])
+                a.writerow(['', '', '', '', '', '', '', '', '', 'Abundance', '',''])
                 a.writerow(['', '', '', '', '', '', '', '', '', 'Preservation', '',''])
             a.writerow(ord_keys)
             if self.n_track in [k['track'] for k in self.selection]:
@@ -482,9 +482,27 @@ class HelpFrame(wx.Frame): # Help window
         html.LoadFile(os.path.join(PATH,'help.html'))
         self.Show()
 
-class StartingFrame(wx.Frame): # Start window that collects metadata
+class FormatDialog(wx.Dialog): # Dialog to choose Sea/Land
     def __init__(self, parent):
+        wx.Dialog.__init__(self, parent, -1, 'Choose a data type', size=(300,70))
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        self.f= wx.ComboBox(self, size=(-1,-1), choices=['Deep-Sea Core','Land Section'], style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        sizer.Add(self.f,0,wx.CENTER,5)
+        hor = wx.BoxSizer(wx.HORIZONTAL)
+        okButton = wx.Button(self, wx.ID_OK, "OK")
+        okButton.SetDefault()
+        hor.Add(okButton)
+        hor.Add((20,20))
+        cancelButton = wx.Button(self, wx.ID_CANCEL, "Cancel")
+        hor.Add(cancelButton)
+        sizer.Add(hor, 0,wx.CENTER)
+        self.SetSizer(sizer)
+        self.Layout()
+
+class StartingFrame(wx.Frame): # Start window that collects metadata
+    def __init__(self, parent, form):
         wx.Frame.__init__(self, parent, size= (600,250), title='Raritas')
+        self.ftype = 'O' if form.f.GetValue()=='Deep-Sea Core' else 'L'
         #Preparing files
         self.config = {}
         self.configfile = os.path.join(os.path.expanduser('~'),"bugconfig.txt")
@@ -518,24 +536,44 @@ class StartingFrame(wx.Frame): # Start window that collects metadata
         sizerO.Add(wx.StaticText(self.StartingPanel, label='Fossil Group ', style=wx.ALIGN_CENTER), pos=(3,0))
         self.fg2 = wx.TextCtrl(self.StartingPanel, size=(150,-1))
         sizerO.Add(self.fg2, pos=(3,1), span=(1,2))
-        sizerO.Add(wx.StaticText(self.StartingPanel, label='Leg ', style=wx.ALIGN_CENTER),pos=(1,3))
         self.l2 = wx.TextCtrl(self.StartingPanel, size=(100,-1))
         sizerO.Add(self.l2, pos=(1,4), span=(1,2))
-        sizerO.Add(wx.StaticText(self.StartingPanel, label='Site ', style=wx.ALIGN_CENTER), pos=(2,3))
         self.s2 = wx.TextCtrl(self.StartingPanel, size=(100,-1))
         sizerO.Add(self.s2, pos=(2,4), span=(1,2))
-        sizerO.Add(wx.StaticText(self.StartingPanel, label='Hole ', style=wx.ALIGN_CENTER), pos=(3,3))
         self.h2 = wx.TextCtrl(self.StartingPanel, size=(100,-1))
         sizerO.Add(self.h2, pos=(3,4), span=(1,2))
-        sizerO.Add(wx.StaticText(self.StartingPanel, label='Core ', style=wx.ALIGN_CENTER), pos=(1,6))
         self.c2 = wx.TextCtrl(self.StartingPanel, size=(100,-1))
         sizerO.Add(self.c2, pos=(1,7), span=(1,2))
-        sizerO.Add(wx.StaticText(self.StartingPanel, label='Section ', style=wx.ALIGN_CENTER), pos=(2,6))
         self.sc2 = wx.TextCtrl(self.StartingPanel, size=(100,-1))
         sizerO.Add(self.sc2, pos=(2,7), span=(1,2))
-        sizerO.Add(wx.StaticText(self.StartingPanel, label='Interval ', style=wx.ALIGN_CENTER), pos=(3,6))
         self.int2 = wx.TextCtrl(self.StartingPanel, size=(100,-1))
         sizerO.Add(self.int2, pos=(3,7), span=(1,2))
+        if self.ftype=='O':
+            sizerO.Add(wx.StaticText(self.StartingPanel, label='Leg ', style=wx.ALIGN_CENTER),pos=(1,3))
+            sizerO.Add(wx.StaticText(self.StartingPanel, label='Site ', style=wx.ALIGN_CENTER), pos=(2,3))
+            sizerO.Add(wx.StaticText(self.StartingPanel, label='Hole ', style=wx.ALIGN_CENTER), pos=(3,3))
+            sizerO.Add(wx.StaticText(self.StartingPanel, label='Core ', style=wx.ALIGN_CENTER), pos=(1,6))
+            sizerO.Add(wx.StaticText(self.StartingPanel, label='Section ', style=wx.ALIGN_CENTER), pos=(2,6))
+            sizerO.Add(wx.StaticText(self.StartingPanel, label='Interval ', style=wx.ALIGN_CENTER), pos=(3,6))
+            if self.config.get('Leg',False): self.l2.SetValue(self.config['Leg'])
+            if self.config.get('Site',False): self.s2.SetValue(self.config['Site'])
+            if self.config.get('Hole',False): self.h2.SetValue(self.config['Hole'])
+            if self.config.get('Section',False): self.sc2.SetValue(self.config['Section'])
+            if self.config.get('Core',False): self.c2.SetValue(self.config['Core'])
+            if self.config.get('Interval',False): self.int2.SetValue(self.config['Interval'])
+        else:
+            sizerO.Add(wx.StaticText(self.StartingPanel, label='Formation ', style=wx.ALIGN_CENTER),pos=(1,3))
+            sizerO.Add(wx.StaticText(self.StartingPanel, label='Sample Name ', style=wx.ALIGN_CENTER), pos=(2,3))
+            sizerO.Add(wx.StaticText(self.StartingPanel, label='Country ', style=wx.ALIGN_CENTER), pos=(3,3))
+            sizerO.Add(wx.StaticText(self.StartingPanel, label='Latitude ', style=wx.ALIGN_CENTER), pos=(1,6))
+            sizerO.Add(wx.StaticText(self.StartingPanel, label='Longitude ', style=wx.ALIGN_CENTER), pos=(2,6))
+            sizerO.Add(wx.StaticText(self.StartingPanel, label='meter level ', style=wx.ALIGN_CENTER), pos=(3,6))
+            if self.config.get('Formation',False): self.l2.SetValue(self.config['Formation'])
+            if self.config.get('Sample Name',False): self.s2.SetValue(self.config['Sample Name'])
+            if self.config.get('Country',False): self.h2.SetValue(self.config['Country'])
+            if self.config.get('Latitude',False): self.sc2.SetValue(self.config['Latitude'])
+            if self.config.get('Longitude',False): self.c2.SetValue(self.config['Longitude'])
+            if self.config.get('meter level',False): self.int2.SetValue(self.config['meter level'])
         topSizer.Add(sizerO, pos=(0,0), span=(3,1))
         sizButton1 = wx.GridBagSizer(5,5)
         sizButton2 = wx.GridBagSizer(5,5)
@@ -553,12 +591,6 @@ class StartingFrame(wx.Frame): # Start window that collects metadata
         topSizer.Add(sizButton2, pos=(6,0), span=(1,1),flag=wx.ALIGN_CENTER)
         if self.config.get('Entered By:',False): self.ent2.SetValue(self.config['Entered By:']) #If metadata present in config file, preload the values
         if self.config.get('Fossil Group:',False): self.fg2.SetValue(self.config['Fossil Group:'])
-        if self.config.get('Leg',False): self.l2.SetValue(self.config['Leg'])
-        if self.config.get('Site',False): self.s2.SetValue(self.config['Site'])
-        if self.config.get('Hole',False): self.h2.SetValue(self.config['Hole'])
-        if self.config.get('Section',False): self.sc2.SetValue(self.config['Section'])
-        if self.config.get('Core',False): self.c2.SetValue(self.config['Core'])
-        if self.config.get('Interval',False): self.int2.SetValue(self.config['Interval'])
         if self.config.get('Taxa File',False): self.filedir.SetValue(self.config['Taxa File'])
         self.StartingPanel.SetSizerAndFit(topSizer)
         self.sizer = wx.BoxSizer(wx.VERTICAL)
@@ -576,8 +608,10 @@ class StartingFrame(wx.Frame): # Start window that collects metadata
     def Start(self, event): # What happens when clicking Start
         # Save metadata
         filedir = self.filedir.GetValue()
-        metadata = {'Entered By:':self.ent2.GetValue(),'Entry Date:':self.dat2.GetValue(),'File Type:':'O','Fossil Group:':self.fg2.GetValue(),'Leg':self.l2.GetValue(), 'Site':self.s2.GetValue(), 'Hole':self.h2.GetValue(), 'Core': self.c2.GetValue(), 'Section': self.sc2.GetValue(), 'Interval': self.int2.GetValue()}
-        self.config = metadata
+        if self.ftype=='O':
+            self.config = {'Entered By:':self.ent2.GetValue(),'Entry Date:':self.dat2.GetValue(),'File Type:':self.ftype,'Fossil Group:':self.fg2.GetValue(),'Leg':self.l2.GetValue(), 'Site':self.s2.GetValue(), 'Hole':self.h2.GetValue(), 'Core': self.c2.GetValue(), 'Section': self.sc2.GetValue(), 'Interval': self.int2.GetValue()}
+        else:
+            self.config = {'Entered By:':self.ent2.GetValue(),'Entry Date:':self.dat2.GetValue(),'File Type:':self.ftype,'Fossil Group:':self.fg2.GetValue(),'Formation':self.l2.GetValue(), 'Sample Name':self.s2.GetValue(), 'Country':self.h2.GetValue(), 'Latitude': self.c2.GetValue(), 'Longitude': self.sc2.GetValue(), 'meter level': self.int2.GetValue()}
         self.config['Taxa File'] = filedir
         if os.path.exists(self.configfile):
             os.remove(self.configfile)
@@ -596,5 +630,8 @@ class StartingFrame(wx.Frame): # Start window that collects metadata
 #Boilerplate
 if __name__ == '__main__':
     app = wx.App(False)
-    frame = StartingFrame(None)
-    app.MainLoop()
+    form = FormatDialog(None)
+    form.Destroy()
+    if form.ShowModal()==wx.ID_OK:
+        frame = StartingFrame(None, form)
+        app.MainLoop()
