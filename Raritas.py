@@ -205,7 +205,6 @@ class CountingFrame(wx.Frame): # Main Counting window
         self.t1.SetLabel('Track %s' % self.n_track)
 
     def RCM(self,event): # Switching to Rare Count Mode
-        self.mode = 'rare'
         list_d =[] # Prepare list of already counted species with their relative abundance for dialog
         for i in self.All:
             i['Normal Count'] = len([k for k in self.selection if k['species'] == i['species_name'] and k['mode']=='normal'])
@@ -225,6 +224,7 @@ class CountingFrame(wx.Frame): # Main Counting window
                     b.Enable(False)
             self.last_normal_track = self.n_track
             self.n_track += 1
+            self.mode = 'rare'
             self.t1.SetLabel('Track %s' % self.n_track)
             self.b2.Enable(False)
 
@@ -246,14 +246,17 @@ class CountingFrame(wx.Frame): # Main Counting window
                     self.selection.append({'species':i[1], 'track':int(i[0]), 'mode':i[2]})
                 else: # Flag back the taxa discarded from rare count mode
                     sp = i[1].split(' estimated')
-                    for j in [k for k in self.All if k['species_name']==sp]:
+                    for j in [k for k in self.All if k['species_name']==sp[0]]:
                         j['Estimated'] = '*'
+                    for i,b in self.button_map.items():
+                        if i in sp: b.Enable(False)
             self.n_track = max([k['track'] for k in self.selection])
             for i in self.All: # Add back the taxa found in normal count mode
                 i['Normal Count'] = len([k for k in self.selection if k['species'] == i['species_name'] and k['mode']=='normal'])
             estimated = 0
             if 'rare' in [k['mode'] for k in self.selection]: # Add back the taxa found in rare count mode, including the estimated ones.
                 self.mode = 'rare'
+                self.b2.Enable(False)
                 self.last_normal_track = max([k['track'] for k in self.selection if k['mode']=='normal'])
                 for i in self.All:
                     if i['Estimated']=='*':
@@ -262,7 +265,7 @@ class CountingFrame(wx.Frame): # Main Counting window
                         estimated += estimated_i
                     else:
                         i['Rare Count'] = len([k for k in self.selection if k['species'] == i['species_name'] and k['mode']=='rare'])
-            self.specimens = len(self.selection) + estimated
+            self.specimens = len(self.selection) + int(estimated)
             self.n_track += 1
             self.t2.SetLabel('%s specimens' % self.specimens)
             self.sel.SetValue("\n".join(reversed([k['species'] for k in self.selection])))
