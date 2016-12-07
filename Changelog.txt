@@ -4,6 +4,7 @@ Version 0.5 (06/12/2016):
 - Modified name of software.
 - Added Land Section support.
 - Moved Estimated column in the output file to the 'Comment' column.
+- Modified output file so that it complies strictly to SOD 2b1 format.
 
 Version 0.4 (05/09/2016):
 - Modified output file to follow SOD-OFF version 2b1. Added as comment the number of tracks counted.
