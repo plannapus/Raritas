@@ -3,6 +3,7 @@ Version 0.5 (06/12/2016):
 - Corrected discrepancies between Mac and PC ('Inspect entries' is still broken on PC though).
 - Modified name of software.
 - Added Land Section support.
+- Moved Estimated column in the output file to the 'Comment' column.
 
 Version 0.4 (05/09/2016):
 - Modified output file to follow SOD-OFF version 2b1. Added as comment the number of tracks counted.
