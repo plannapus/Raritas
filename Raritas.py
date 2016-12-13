@@ -534,7 +534,7 @@ class StartingFrame(wx.Frame): # Start window that collects metadata
         self.ent2 = wx.TextCtrl(self.StartingPanel, size=(150,-1))
         sizerO.Add(self.ent2, pos=(1,1), span=(1,2))
         sizerO.Add(wx.StaticText(self.StartingPanel, label='Entry date ', style=wx.ALIGN_CENTER), pos=(2,0))
-        self.dat2 = wx.TextCtrl(self.StartingPanel, value= time.strftime("%d %b %Y"), size=(150,-1))
+        self.dat2 = wx.TextCtrl(self.StartingPanel, value= time.strftime("%d-%m-%Y"), size=(150,-1))
         sizerO.Add(self.dat2, pos=(2,1), span=(1,2))
         sizerO.Add(wx.StaticText(self.StartingPanel, label='Fossil Group ', style=wx.ALIGN_CENTER), pos=(3,0))
         self.fg2 = wx.TextCtrl(self.StartingPanel, size=(150,-1))
@@ -654,7 +654,6 @@ class StartingFrame(wx.Frame): # Start window that collects metadata
 if __name__ == '__main__':
     app = wx.App(False)
     form = FormatDialog(None)
-    form.Destroy()
     if form.ShowModal()==wx.ID_OK:
         frame = StartingFrame(None, form)
         app.MainLoop()
