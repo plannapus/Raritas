@@ -69,7 +69,6 @@ class CountingFrame(wx.Frame): # Main Counting window
         BigSizer = wx.GridBagSizer(5,5)
         g1 = wx.GridSizer(n1,math.ceil(N/n1),1,1)
         self.button_map = {}
-        self.alt_state = False
         for i in range(0, N):
             b = wx.Button(self.panel, wx.ID_ANY,name=species_on_button[i], label=abbreviations[i])
             b.Bind(wx.EVT_LEFT_DOWN, self.BClick)
