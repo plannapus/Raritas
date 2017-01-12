@@ -292,27 +292,27 @@ class CountingFrame(wx.Frame): # Main Counting window
             savefile2 = dlg.GetPath()
             a = csv.writer(open(savefile2,'wb'),delimiter='\t')
             ord_keys = ['Genus','GQ','Species','SQ','Subspecies','Author','empty','HigherTaxon','Comment','empty', 'Total']
-            pretty_keys = ['Genus','GQ','Species','SQ','Subspecies','Author','Taxon Code','HigherTaxon','Taxon Comment','', '']
+            pretty_keys = ['Genus:','GQ:','Species:','SQ:','Subspecies:','Author:','Taxon Code:','Higher Taxon:','Taxon Comments:','', '']
             if self.metadata['File Type:']=='O':
-                a.writerow(['SOD-OFF v.:','2.0b1','File Type', 'O', 'Fossil Group', self.metadata['Fossil Group:'],'','','','',''])
-                a.writerow(['Source:','','','','','','','','','Site', self.metadata['Site']])
-                a.writerow(['Entered By:', self.metadata['Entered By:'], self.metadata['Entry Date:'],'Checked By:', '', '','','','','Hole', self.metadata['Hole']])
-                a.writerow(['Leg Info:', self.metadata['Leg'],'', '', '', '', '', '', '', 'Core', self.metadata['Core']])
-                a.writerow(['', '', '', '', '', '', '', '', '', 'Section', self.metadata['Section']])
-                a.writerow(['Occurrences:', 'C', '', '', '', '', '', '', '', 'Interval', self.metadata['Interval']])
-                a.writerow(['Comments:',str(self.n_track)+' tracks observed', '', '', '', '', '', '', '', 'Depth(mbsf)', ''])
-                a.writerow(['','', '', '', '', '', '', '', '', 'Abundance', self.metadata['Abundance']])
-                a.writerow(['', '', '', '', '', '', '', '', '', 'Preservation', self.metadata['Preservation']])
+                a.writerow(['SOD-OFF v.:','2.1','File Type:', 'O', 'Fossil Group:', self.metadata['Fossil Group:'],'','','','',''])
+                a.writerow(['Source ID:','','Source Name:','','Source Citation:','','','','','Site:', self.metadata['Site']])
+                a.writerow(['Entered By:', self.metadata['Entered By:'], 'Entry Date:',self.metadata['Entry Date:'],'Checked By:', '','Check Date:','','','Hole:', self.metadata['Hole']])
+                a.writerow(['Leg Info:', self.metadata['Leg'],'Leg Qualifier:', '', '', '', '', '', '', 'Core:', self.metadata['Core']])
+                a.writerow(['', '', '', '', 'File Creation Method:', 'Raritas', '', '', '', 'Section:', self.metadata['Section']])
+                a.writerow(['Occurrences Data Type:', 'C', 'Keys:', '', '', '', '', '', '', 'Interval top:', self.metadata['Interval']])
+                a.writerow(['Comments:',str(self.n_track)+' tracks observed', '', '', '', '', '', '', '', 'Depth(mbsf):', ''])
+                a.writerow(['','', '', '', '', '', '', '', '', 'Abundance:', self.metadata['Abundance']])
+                a.writerow(['', '', '', '', '', '', '', '', '', 'Preservation:', self.metadata['Preservation']])
             elif self.metadata['File Type:']=='L':
-                a.writerow(['SOD-OFF v.:','2.0b1','File Type', 'L', 'Fossil Group', self.metadata['Fossil Group:'],'','','','',''])
-                a.writerow(['Source:','','Source Citation:','','','','','','','Formation', self.metadata['Formation']])
-                a.writerow(['Entered By:', self.metadata['Entered By:'], self.metadata['Entry Date:'],'Checked By:', '', '','','','','Sample Name', self.metadata['Sample Name']])
-                a.writerow(['Location',self.metadata['Country'],'','', '', '', '', '', '', 'meter level', self.metadata['meter level']])
-                a.writerow(['Lat/Long:', self.metadata['Latitude'], self.metadata['Longitude'],'', '', '', '', '', '','Age', self.metadata['Age']])
-                a.writerow(['Occurrences:', 'C', '', '', '', '', '', '', '', 'Zone', self.metadata['Zone']])
-                a.writerow(['Comments:', str(self.n_track)+' tracks observed', '', '', '', '', '', '', '', 'Lithology',self.metadata['Lithology']])
-                a.writerow(['', '', '', '', '', '', '', '', '', 'Abundance', self.metadata['Abundance']])
-                a.writerow(['', '', '', '', '', '', '', '', '', 'Preservation', self.metadata['Preservation']])
+                a.writerow(['SOD-OFF v.:','2.1','File Type:', 'L', 'Fossil Group:', self.metadata['Fossil Group:'],'','','','',''])
+                a.writerow(['Source ID:','','Source Name:','','Source Citation:','','','','','Formation:', self.metadata['Formation']])
+                a.writerow(['Entered By:', self.metadata['Entered By:'],'Entry Date:', self.metadata['Entry Date:'],'Checked By:', '', 'Checked Date:','','','Sample Name:', self.metadata['Sample Name']])
+                a.writerow(['Geographic ID','','Geographic Source:','', 'Geographic Name:',self.metadata['Geographic Name'] , '', '', '', 'Meter level:', self.metadata['meter level']])
+                a.writerow(['Latitude:', self.metadata['Latitude'], 'Longitude:',self.metadata['Longitude'], 'File Creation Method:', 'Raritas', '', '','','Age:', self.metadata['Age']])
+                a.writerow(['Occurrence Data Type:', 'C', 'Keys:', '', '', '', '', '', '', 'Zone:', self.metadata['Zone']])
+                a.writerow(['Comments:', str(self.n_track)+' tracks observed', '', '', '', '', '', '', '', 'Lithology:',self.metadata['Lithology']])
+                a.writerow(['', '', '', '', '', '', '', '', '', 'Abundance:', self.metadata['Abundance']])
+                a.writerow(['', '', '', '', '', '', '', '', '', 'Preservation:', self.metadata['Preservation']])
             a.writerow(pretty_keys)
             if self.n_track in [k['track'] for k in self.selection]:
                 if self.mode == 'normal':
@@ -567,7 +567,7 @@ class StartingFrame(wx.Frame): # Start window that collects metadata
         else:
             sizerO.Add(wx.StaticText(self.StartingPanel, label='Formation ', style=wx.ALIGN_CENTER),pos=(1,3))
             sizerO.Add(wx.StaticText(self.StartingPanel, label='Sample Name ', style=wx.ALIGN_CENTER), pos=(2,3))
-            sizerO.Add(wx.StaticText(self.StartingPanel, label='Country ', style=wx.ALIGN_CENTER), pos=(3,3))
+            sizerO.Add(wx.StaticText(self.StartingPanel, label='Geographic Name ', style=wx.ALIGN_CENTER), pos=(3,3))
             sizerO.Add(wx.StaticText(self.StartingPanel, label='Latitude ', style=wx.ALIGN_CENTER), pos=(1,6))
             sizerO.Add(wx.StaticText(self.StartingPanel, label='Longitude ', style=wx.ALIGN_CENTER), pos=(2,6))
             sizerO.Add(wx.StaticText(self.StartingPanel, label='meter level ', style=wx.ALIGN_CENTER), pos=(3,6))
@@ -582,7 +582,7 @@ class StartingFrame(wx.Frame): # Start window that collects metadata
             sizerO.Add(self.lith, pos=(3,10), span=(1,2))
             if self.config.get('Formation',False): self.l2.SetValue(self.config['Formation'])
             if self.config.get('Sample Name',False): self.s2.SetValue(self.config['Sample Name'])
-            if self.config.get('Country',False): self.h2.SetValue(self.config['Country'])
+            if self.config.get('Geographic Name',False): self.h2.SetValue(self.config['Geographic Name'])
             if self.config.get('Latitude',False): self.sc2.SetValue(self.config['Latitude'])
             if self.config.get('Longitude',False): self.c2.SetValue(self.config['Longitude'])
             if self.config.get('meter level',False): self.int2.SetValue(self.config['meter level'])
@@ -634,7 +634,7 @@ class StartingFrame(wx.Frame): # Start window that collects metadata
         if self.ftype=='O':
             self.config = {'Entered By:':self.ent2.GetValue(),'Entry Date:':self.dat2.GetValue(),'File Type:':self.ftype,'Fossil Group:':self.fg2.GetValue(),'Leg':self.l2.GetValue(), 'Site':self.s2.GetValue(), 'Hole':self.h2.GetValue(), 'Core': self.c2.GetValue(), 'Section': self.sc2.GetValue(), 'Interval': self.int2.GetValue(), 'Abundance': self.ab.GetValue(), 'Preservation': self.pres.GetValue()}
         else:
-            self.config = {'Entered By:':self.ent2.GetValue(),'Entry Date:':self.dat2.GetValue(),'File Type:':self.ftype,'Fossil Group:':self.fg2.GetValue(),'Formation':self.l2.GetValue(), 'Sample Name':self.s2.GetValue(), 'Country':self.h2.GetValue(), 'Latitude': self.c2.GetValue(), 'Longitude': self.sc2.GetValue(), 'meter level': self.int2.GetValue(), 'Age':self.age.GetValue(), 'Zone':self.zone.GetValue(), 'Lithology':self.lith.GetValue(), 'Abundance': self.ab.GetValue(), 'Preservation': self.pres.GetValue()}
+            self.config = {'Entered By:':self.ent2.GetValue(),'Entry Date:':self.dat2.GetValue(),'File Type:':self.ftype,'Fossil Group:':self.fg2.GetValue(),'Formation':self.l2.GetValue(), 'Sample Name':self.s2.GetValue(), 'Geographic Name':self.h2.GetValue(), 'Latitude': self.c2.GetValue(), 'Longitude': self.sc2.GetValue(), 'meter level': self.int2.GetValue(), 'Age':self.age.GetValue(), 'Zone':self.zone.GetValue(), 'Lithology':self.lith.GetValue(), 'Abundance': self.ab.GetValue(), 'Preservation': self.pres.GetValue()}
         self.config['Taxa File'] = filedir
         if os.path.exists(self.configfile):
             os.remove(self.configfile)

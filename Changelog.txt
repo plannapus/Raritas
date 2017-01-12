@@ -1,3 +1,6 @@
+Version 0.6 (12/01/2017):
+- Modified output file to comply with SOD-OFF version 2.1.
+
 Version 0.5 (06/12/2016):
 - Corrected bug when uploading an unfinished count that was already in Rare Count Mode.
 - Corrected discrepancies between Mac and PC ('Inspect entries' is still broken on PC though).
