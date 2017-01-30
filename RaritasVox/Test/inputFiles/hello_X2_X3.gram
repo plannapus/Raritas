@@ -1,0 +1,17 @@
+#JSGF V1.0;
+
+/**
+ * JSGF Grammar for Hello World example
+ */
+
+grammar hello;
+
+public <greet> = /**(Good morning | Hello) ( Bhiksha | Evandro | Paul | Philip | Rita | Will );
+					*/
+	(Acanthometra | Antarcticum | Boreale | Buetschlii | Calvata | Cribrosa |
+	Dentata | Dichotoma | Ellipsoides | Hexacantha | Hexagonium | Murrayana |
+	Ovatiretalis | Pandora | Platycephalus | Pluto | Punctatum | Spinosa |
+	Tenuis | Teralans |
+	Acrostoma | Bicorne | Borealis | Circumtexta | Cyrtodon | Delicatulum |
+	Emmae | Huxleyi | Lappacea | Leptodermum | Medianum | Nana | Octopyle |
+	Ophirense | Pinchuda | Setosa | Sol | Straussi | Umbellifera | Ypsilon);

@@ -1,0 +1,14 @@
+#JSGF V1.0;
+
+/**
+ * JSGF Grammar for Hello World example
+ */
+
+grammar hello;
+
+public <greet> = /**(Good morning | Hello) ( Bhiksha | Evandro | Paul | Philip | Rita | Will );
+					*/
+				(AProx | stocki | AmpRadiosa | ArtAnnulatus | AxIrregular |
+				BGran | CryptBuss | Gondwana | LophoHadra | Mita | PodPapilis |
+				Pseudodict | Zygo | Spyro | Cornutella | Calocyclas | Bunnyears | Zigzag |
+				remove);
