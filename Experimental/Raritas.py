@@ -154,6 +154,11 @@ class CountingFrame(wx.Frame): # Main Counting window
             self.All.append(d) # Add the new species to 'self.All'
             widg_to_mod = self.list_map[d['HigherTaxon']] # Modify stroller widgets accordingly
             widg_to_mod.Append(d['species_name'])
+            read_taxafile = csv.reader(open(self.metadata['Taxa File'],'rUb'),delimiter='\t')
+            keys = read_taxafile.next()
+            right_order = [d[k] for k in keys if k in d.keys()]
+            write_taxafile = csv.writer(open(self.metadata['Taxa File'],'ab'),delimiter='\t')
+            write_taxafile.writerow(right_order)
         nsd.Destroy()
 
     def BClick(self, event): # What happens when clicking a button
