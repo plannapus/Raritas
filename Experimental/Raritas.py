@@ -29,7 +29,7 @@ class CountingFrame(wx.Frame): # Main Counting window
         for i in taxafile:
             b = {}
             for k,v in zip(keys,i):
-                b[k] = v
+                b[k] = v.decode('utf-8')
             self.All.append(b)
         for d in self.All:
             d['species_name'] = d['Genus']+d['GQ']+' '+d['Species']+d['SQ']+' '+d['Subspecies']
@@ -39,7 +39,8 @@ class CountingFrame(wx.Frame): # Main Counting window
         species_on_button = [k['species_name'] for k in self.All if k['onButton']=='y']
         abbreviations = [k['abbreviation'] for k in self.All if k['onButton']=='y']
         N = len(species_on_button)
-        n1 = round(math.sqrt(N))
+        n1 = round(math.sqrt(N)) if N>0 else 0
+        n2 = math.ceil(N/n1) if n1>0 else 0
 
         #Create Menubar
         menubar = wx.MenuBar()
@@ -67,7 +68,7 @@ class CountingFrame(wx.Frame): # Main Counting window
 
         #Build GUI
         BigSizer = wx.GridBagSizer(5,5)
-        g1 = wx.GridSizer(n1,math.ceil(N/n1),1,1)
+        g1 = wx.GridSizer(n1,n2,1,1)
         self.button_map = {}
         for i in range(0, N):
             b = wx.Button(self.panel, wx.ID_ANY,name=species_on_button[i], label=abbreviations[i])
@@ -78,6 +79,7 @@ class CountingFrame(wx.Frame): # Main Counting window
         Groups = set([k['HigherTaxon'] for k in self.All])
         if ' ' in Groups: Groups.remove(' ') #Remove unnamed groups
         if '' in Groups: Groups.remove('')
+        Groups = sorted(Groups)
         Gsizer = wx.FlexGridSizer(len(Groups),2,5,5)
         self.list_map = {}
         for z, i in enumerate(Groups):
@@ -124,7 +126,7 @@ class CountingFrame(wx.Frame): # Main Counting window
         BigSizer.AddGrowableCol(0)
         heightB = n1*30 if os.name=='nt' else n1*25
         heightR = 300 if os.name=='nt' else 250
-        widthB = math.ceil(N/n1)*105
+        widthB = math.ceil(N/n1)*105 if n1>0 else 0
         widthR = 1050
         self.SetSize((max([widthB, widthR]),heightB+heightR))
         self.panel.SetSizer(BigSizer)
@@ -302,7 +304,7 @@ class CountingFrame(wx.Frame): # Main Counting window
             if self.metadata['File Type:']=='O':
                 a.writerow(['SOD-OFF v.:','2.0b1','File Type', 'O', 'Fossil Group', self.metadata['Fossil Group:'],'','','','',''])
                 a.writerow(['Source:','','','','','','','','','Site', self.metadata['Site']])
-                a.writerow(['Entered By:', self.metadata['Entered By:'], self.metadata['Entry Date:'],'Checked By:', '', '','','','','Hole', self.metadata['Hole']])
+                a.writerow(['Entered By:', self.metadata['Entered By:'].encode('utf-8'), self.metadata['Entry Date:'],'Checked By:', '', '','','','','Hole', self.metadata['Hole']])
                 a.writerow(['Leg Info:', self.metadata['Leg'],'', '', '', '', '', '', '', 'Core', self.metadata['Core']])
                 a.writerow(['', '', '', '', '', '', '', '', '', 'Section', self.metadata['Section']])
                 a.writerow(['Occurrences:', 'C', '', '', '', '', '', '', '', 'Interval', self.metadata['Interval']])
@@ -340,7 +342,7 @@ class CountingFrame(wx.Frame): # Main Counting window
             for i in self.All:
                 i['Total'] = i['Normal Count']+i['Rare Count']
                 i['empty'] = ''
-                a.writerow([i[k] for k in ord_keys])
+                a.writerow([i[k].encode('utf-8') if type(i[k]) is unicode else i[k] for k in ord_keys])
             savefile3 = os.path.join(os.path.dirname(savefile2),'Div_'+os.path.basename(savefile2)) # Also saves a file containing the species accumulation curve
             b = csv.writer(open(savefile3,'wb'),delimiter='\t')
             b.writerow(('Specimens','Species'))
@@ -638,9 +640,9 @@ class StartingFrame(wx.Frame): # Start window that collects metadata
         # Save metadata
         filedir = self.filedir.GetValue()
         if self.ftype=='O':
-            self.config = {'Entered By:':self.ent2.GetValue(),'Entry Date:':self.dat2.GetValue(),'File Type:':self.ftype,'Fossil Group:':self.fg2.GetValue(),'Leg':self.l2.GetValue(), 'Site':self.s2.GetValue(), 'Hole':self.h2.GetValue(), 'Core': self.c2.GetValue(), 'Section': self.sc2.GetValue(), 'Interval': self.int2.GetValue(), 'Abundance': self.ab.GetValue(), 'Preservation': self.pres.GetValue()}
+            self.config = {'Entered By:':self.ent2.GetValue().decode('utf-8'),'Entry Date:':self.dat2.GetValue(),'File Type:':self.ftype,'Fossil Group:':self.fg2.GetValue(),'Leg':self.l2.GetValue(), 'Site':self.s2.GetValue(), 'Hole':self.h2.GetValue(), 'Core': self.c2.GetValue(), 'Section': self.sc2.GetValue(), 'Interval': self.int2.GetValue(), 'Abundance': self.ab.GetValue(), 'Preservation': self.pres.GetValue()}
         else:
-            self.config = {'Entered By:':self.ent2.GetValue(),'Entry Date:':self.dat2.GetValue(),'File Type:':self.ftype,'Fossil Group:':self.fg2.GetValue(),'Formation':self.l2.GetValue(), 'Sample Name':self.s2.GetValue(), 'Country':self.h2.GetValue(), 'Latitude': self.c2.GetValue(), 'Longitude': self.sc2.GetValue(), 'meter level': self.int2.GetValue(), 'Age':self.age.GetValue(), 'Zone':self.zone.GetValue(), 'Lithology':self.lith.GetValue(), 'Abundance': self.ab.GetValue(), 'Preservation': self.pres.GetValue()}
+            self.config = {'Entered By:':self.ent2.GetValue().decode('utf-8'),'Entry Date:':self.dat2.GetValue(),'File Type:':self.ftype,'Fossil Group:':self.fg2.GetValue(),'Formation':self.l2.GetValue(), 'Sample Name':self.s2.GetValue(), 'Country':self.h2.GetValue(), 'Latitude': self.c2.GetValue(), 'Longitude': self.sc2.GetValue(), 'meter level': self.int2.GetValue(), 'Age':self.age.GetValue(), 'Zone':self.zone.GetValue(), 'Lithology':self.lith.GetValue(), 'Abundance': self.ab.GetValue(), 'Preservation': self.pres.GetValue()}
         self.config['Taxa File'] = filedir
         if os.path.exists(self.configfile):
             os.remove(self.configfile)
