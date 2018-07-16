@@ -22,6 +22,7 @@ class CountingFrame(wx.Frame): # Main Counting window
         self.dirname = os.path.dirname(os.path.realpath(config['Taxa File'])) # Default directory for dialogs
         self.All = []                # List of dictionaries: each dictionary corresponds to one species (i. e. one line in the taxa file)
         self.metadata = config       # Metadata (sample name, etc.)
+        self.saved = False
 
         # Reading taxa file
         taxafile = csv.reader(open(config['Taxa File'],'rUb'),delimiter='\t')
@@ -29,7 +30,7 @@ class CountingFrame(wx.Frame): # Main Counting window
         for i in taxafile:
             b = {}
             for k,v in zip(keys,i):
-                b[k] = v
+                b[k] = v.decode('utf-8')
             self.All.append(b)
         for d in self.All:
             d['species_name'] = d['Genus']+d['GQ']+' '+d['Species']+d['SQ']+' '+d['Subspecies']
@@ -39,7 +40,8 @@ class CountingFrame(wx.Frame): # Main Counting window
         species_on_button = [k['species_name'] for k in self.All if k['onButton']=='y']
         abbreviations = [k['abbreviation'] for k in self.All if k['onButton']=='y']
         N = len(species_on_button)
-        n1 = round(math.sqrt(N))
+        n1 = round(math.sqrt(N)) if N>0 else 0
+        n2 = math.ceil(N/n1) if n1>0 else 0
 
         #Create Menubar
         menubar = wx.MenuBar()
@@ -67,17 +69,18 @@ class CountingFrame(wx.Frame): # Main Counting window
 
         #Build GUI
         BigSizer = wx.GridBagSizer(5,5)
-        g1 = wx.GridSizer(n1,math.ceil(N/n1),1,1)
+        g1 = wx.GridSizer(n1,n2,1,1)
         self.button_map = {}
         for i in range(0, N):
             b = wx.Button(self.panel, wx.ID_ANY,name=species_on_button[i], label=abbreviations[i])
-            b.Bind(wx.EVT_BUTTON, self.BClick)
+            b.Bind(wx.EVT_LEFT_DOWN, self.BClick)
             self.button_map[species_on_button[i]] = b
             g1.Add(b,1,wx.ALL|wx.EXPAND,3)
         BigSizer.Add(g1, pos=(0,0), span=(1,1), flag=wx.EXPAND)
         Groups = set([k['HigherTaxon'] for k in self.All])
         if ' ' in Groups: Groups.remove(' ') #Remove unnamed groups
         if '' in Groups: Groups.remove('')
+        Groups = sorted(Groups)
         Gsizer = wx.FlexGridSizer(len(Groups),2,5,5)
         self.list_map = {}
         for z, i in enumerate(Groups):
@@ -124,7 +127,7 @@ class CountingFrame(wx.Frame): # Main Counting window
         BigSizer.AddGrowableCol(0)
         heightB = n1*30 if os.name=='nt' else n1*25
         heightR = 300 if os.name=='nt' else 250
-        widthB = math.ceil(N/n1)*105
+        widthB = math.ceil(N/n1)*105 if n1>0 else 0
         widthR = 1050
         self.SetSize((max([widthB, widthR]),heightB+heightR))
         self.panel.SetSizer(BigSizer)
@@ -154,19 +157,27 @@ class CountingFrame(wx.Frame): # Main Counting window
             self.All.append(d) # Add the new species to 'self.All'
             widg_to_mod = self.list_map[d['HigherTaxon']] # Modify stroller widgets accordingly
             widg_to_mod.Append(d['species_name'])
+            read_taxafile = csv.reader(open(self.metadata['Taxa File'],'rUb'),delimiter='\t')
+            keys = read_taxafile.next()
+            right_order = [d[k] for k in keys if k in d.keys()]
+            write_taxafile = csv.writer(open(self.metadata['Taxa File'],'ab'),delimiter='\t')
+            write_taxafile.writerow(right_order)
+        self.saved = False
         nsd.Destroy()
 
     def BClick(self, event): # What happens when clicking a button
         button = event.GetEventObject()
         d = button.GetName()
-        self.selection.append({'species':d, 'track':self.n_track, 'mode':self.mode})
-        self.specimens += 1
+        n = 10 if wx.GetKeyState(wx.WXK_ALT) else 1
+        for i in xrange(n): self.selection.append({'species':d, 'track':self.n_track, 'mode':self.mode})
+        self.specimens += n
         if self.specimens > 1:
             sp_text = '%s specimens' % self.specimens
         else:
             sp_text = '%s specimen' % self.specimens
         self.t2.SetLabel(sp_text)
         self.sel.SetValue("\n".join(reversed([k['species'] for k in self.selection])))
+        self.saved = False
 
     def LSelect(self,event): # What happens when choosing from the list
         d = event.GetString()
@@ -182,6 +193,7 @@ class CountingFrame(wx.Frame): # Main Counting window
         else: # If it is a discarded species, do not do anything
             self.sel.SetValue("!Species estimated in rare count mode\n"+"\n".join(reversed([k['species'] for k in self.selection])))
         event.GetEventObject().SetSelection(-1)
+        self.saved = False
 
     def NextTrack(self, event): #What happens at track change
     	if self.mode == 'normal': # If still in normal count mode
@@ -203,6 +215,7 @@ class CountingFrame(wx.Frame): # Main Counting window
             self.n_track += 1
         self.t2.SetLabel('%s specimens' % self.specimens)
         self.t1.SetLabel('Track %s' % self.n_track)
+        self.saved = False
 
     def RCM(self,event): # Switching to Rare Count Mode
         list_d =[] # Prepare list of already counted species with their relative abundance for dialog
@@ -227,12 +240,14 @@ class CountingFrame(wx.Frame): # Main Counting window
             self.mode = 'rare'
             self.t1.SetLabel('Track %s' % self.n_track)
             self.b2.Enable(False)
+        self.saved = False
 
     def Remove(self, event): #Removing last entry
         self.selection.pop()
         self.specimens -= 1
         self.t2.SetLabel('%s specimens' % self.specimens)
         self.sel.SetValue("\n".join(reversed([k['species'] for k in self.selection])))
+        self.saved = False
 
     def Continue(self, event): #Load unfinished count
         wildcard = "Tab-separated files (*.csv)|*.csv"
@@ -270,11 +285,12 @@ class CountingFrame(wx.Frame): # Main Counting window
             self.t2.SetLabel('%s specimens' % self.specimens)
             self.sel.SetValue("\n".join(reversed([k['species'] for k in self.selection])))
             self.t1.SetLabel('Track %s' % self.n_track)
+        self.saved = False
         dlg.Destroy()
 
     def Save1(self, event): #Save unfinished count (simply right down object 'self.selection' to a file)
         wildcard = "Tab-separated files (*.csv)|*.csv"
-        dlg = wx.FileDialog(self, 'Choose your file', self.dirname, wildcard=wildcard, style=wx.FD_SAVE)
+        dlg = wx.FileDialog(self, 'Save unfinished count', self.dirname, wildcard=wildcard, style=wx.FD_SAVE)
         if dlg.ShowModal() == wx.ID_OK:
             savefile1 = dlg.GetPath()
             a = csv.writer(open(savefile1,'wb'),delimiter='\t')
@@ -283,6 +299,7 @@ class CountingFrame(wx.Frame): # Main Counting window
             if self.mode=='rare':
                 for i in [k['species_name'] for k in self.All if k['Estimated']=='*']:
                     a.writerow(['',i+' estimated',''])
+        self.saved = True
         dlg.Destroy()
 
     def Save2(self, event): #Save finished count in SOD format
@@ -296,7 +313,7 @@ class CountingFrame(wx.Frame): # Main Counting window
             if self.metadata['File Type:']=='O':
                 a.writerow(['SOD-OFF v.:','2.1','File Type:', 'O', 'Fossil Group:', self.metadata['Fossil Group:'],'','','','',''])
                 a.writerow(['Source ID:','','Source Name:','','Source Citation:','','','','','Site:', self.metadata['Site']])
-                a.writerow(['Entered By:', self.metadata['Entered By:'], 'Entry Date:',self.metadata['Entry Date:'],'Checked By:', '','Check Date:','','','Hole:', self.metadata['Hole']])
+                a.writerow(['Entered By:', self.metadata['Entered By:'].encode('utf-8'), 'Entry Date:',self.metadata['Entry Date:'],'Checked By:', '','Check Date:','','','Hole:', self.metadata['Hole']])
                 a.writerow(['Leg Info:', self.metadata['Leg'],'Leg Qualifier:', '', '', '', '', '', '', 'Core:', self.metadata['Core']])
                 a.writerow(['', '', '', '', 'File Creation Method:', 'Raritas', '', '', '', 'Section:', self.metadata['Section']])
                 a.writerow(['Occurrences Data Type:', 'C', 'Keys:', '', '', '', '', '', '', 'Interval top:', self.metadata['Interval']])
@@ -305,9 +322,9 @@ class CountingFrame(wx.Frame): # Main Counting window
                 a.writerow(['', '', '', '', '', '', '', '', '', 'Preservation:', self.metadata['Preservation']])
             elif self.metadata['File Type:']=='L':
                 a.writerow(['SOD-OFF v.:','2.1','File Type:', 'L', 'Fossil Group:', self.metadata['Fossil Group:'],'','','','',''])
-                a.writerow(['Source ID:','','Source Name:','','Source Citation:','','','','','Formation:', self.metadata['Formation']])
-                a.writerow(['Entered By:', self.metadata['Entered By:'],'Entry Date:', self.metadata['Entry Date:'],'Checked By:', '', 'Checked Date:','','','Sample Name:', self.metadata['Sample Name']])
-                a.writerow(['Geographic ID','','Geographic Source:','', 'Geographic Name:',self.metadata['Geographic Name'] , '', '', '', 'Meter level:', self.metadata['meter level']])
+                a.writerow(['Source ID:','','Source Name:','','Source Citation:','','','','','Formation:', self.metadata['Formation'].encode('utf-8')])
+                a.writerow(['Entered By:', self.metadata['Entered By:'].encode('utf-8'),'Entry Date:', self.metadata['Entry Date:'],'Checked By:', '', 'Checked Date:','','','Sample Name:', self.metadata['Sample Name']])
+                a.writerow(['Geographic ID','','Geographic Source:','', 'Geographic Name:',self.metadata['Geographic Name'].encode('utf-8') , '', '', '', 'Meter level:', self.metadata['meter level']])
                 a.writerow(['Latitude:', self.metadata['Latitude'], 'Longitude:',self.metadata['Longitude'], 'File Creation Method:', 'Raritas', '', '','','Age:', self.metadata['Age']])
                 a.writerow(['Occurrence Data Type:', 'C', 'Keys:', '', '', '', '', '', '', 'Zone:', self.metadata['Zone']])
                 a.writerow(['Comments:', str(self.n_track)+' tracks observed', '', '', '', '', '', '', '', 'Lithology:',self.metadata['Lithology']])
@@ -334,7 +351,7 @@ class CountingFrame(wx.Frame): # Main Counting window
             for i in self.All:
                 i['Total'] = i['Normal Count']+i['Rare Count']
                 i['empty'] = ''
-                a.writerow([i[k] for k in ord_keys])
+                a.writerow([i[k].encode('utf-8') if type(i[k]) is unicode else i[k] for k in ord_keys])
             savefile3 = os.path.join(os.path.dirname(savefile2),'Div_'+os.path.basename(savefile2)) # Also saves a file containing the species accumulation curve
             b = csv.writer(open(savefile3,'wb'),delimiter='\t')
             b.writerow(('Specimens','Species'))
@@ -342,6 +359,7 @@ class CountingFrame(wx.Frame): # Main Counting window
             p = zip(x,y)
             for i in p:
                 b.writerow(i)
+        self.saved = True
         dlg.Destroy()
 
     def ComputeDiv(self,selection, All, last_normal_track): #Compute species accumulation curve from object self.selection
@@ -377,8 +395,8 @@ class CountingFrame(wx.Frame): # Main Counting window
         plt.show()
         self.Show(True)
 
-    def Inspect(self, event): # Inspect countings so far (only updates at the end of every track!)
-        ins = InspectFrame(None, title='Specimens counted', data1=self.All)
+    def Inspect(self, event): # Inspect countings so far (only updates at the end of every track in RCM!)
+        ins = InspectFrame(None, title='Specimens counted', data1=self.All, selection=self.selection)
 
     def Save3(self, event): # Save only the Species Accumulation Curve
         wildcard = "Tab-separated files (*.csv)|*.csv"
@@ -394,6 +412,8 @@ class CountingFrame(wx.Frame): # Main Counting window
         dlg.Destroy()
 
     def Quit(self,event): # Quit the counting window
+        if not self.saved:
+            self.Save1(event)
         self.Close()
 
     def Help(self,event): # Display help file
@@ -441,26 +461,33 @@ class NewSpeciesDialog(wx.Dialog): # Dialog for adding a new species
         self.Layout()
 
 class InspectFrame(wx.Frame, listmix.ColumnSorterMixin): # Window for count inspection (sortable spreadsheet format)
-    def __init__(self, parent, title, data1):
+    def __init__(self, parent, title, data1, selection):
         wx.Frame.__init__(self, parent, size=(750,500), title="Entries so far")
         panel = wx.Panel(self, wx.ID_ANY)
         self.index = 0
-        warning = wx.StaticText(panel, label='Warning: This list only updates once every track.', style=wx.ALIGN_CENTER)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        if 'rare' in [k['mode'] for k in selection]:
+            warning = wx.StaticText(panel, label='Warning: In Rare Count Mode, this list only updates once every track.', style=wx.ALIGN_CENTER)
+            sizer.Add(warning)
         self.list_ctrl = wx.ListCtrl(panel, size=(-1,450), style = wx.LC_REPORT|wx.BORDER_SUNKEN|wx.LC_SORT_DESCENDING)
         self.list_ctrl.InsertColumn(0,'Species')
         self.list_ctrl.InsertColumn(1,'Normal Count')
         self.list_ctrl.InsertColumn(2,'Rare Count')
         self.list_ctrl.InsertColumn(3,'Total')
         self.list_ctrl.InsertColumn(4,'Percentage')
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(warning)
         sizer.Add(self.list_ctrl, 0, wx.ALL|wx.EXPAND, 5)
         panel.SetSizer(sizer)
         list_d =[]
-        for i in data1:
-            total =i['Normal Count']+i['Rare Count']
-            percent = float(total)*100/float((sum([k['Normal Count'] for k in data1])+sum([k['Rare Count'] for k in data1])))
-            list_d.append((i['species_name'],i['Normal Count'], i['Rare Count'], total, str(round(percent,3))+' %'))
+        if 'rare' not in [k['mode'] for k in selection]:
+            for i in data1:
+                total = len([k for k in selection if k['species']==i['species_name']])
+                percent = float(total)*100/len(selection)
+                list_d.append((i['species_name'], total, 0, total, str(round(percent,3))+' %'))
+        else:
+            for i in data1:
+                total =i['Normal Count']+i['Rare Count']
+                percent = float(total)*100/float((sum([k['Normal Count'] for k in data1])+sum([k['Rare Count'] for k in data1])))
+                list_d.append((i['species_name'],i['Normal Count'], i['Rare Count'], total, str(round(percent,3))+' %'))
         list_d.sort(key=lambda x:x[3], reverse=True)
         for data in list_d:
             self.list_ctrl.InsertStringItem(self.index, data[0])
@@ -632,9 +659,9 @@ class StartingFrame(wx.Frame): # Start window that collects metadata
         # Save metadata
         filedir = self.filedir.GetValue()
         if self.ftype=='O':
-            self.config = {'Entered By:':self.ent2.GetValue(),'Entry Date:':self.dat2.GetValue(),'File Type:':self.ftype,'Fossil Group:':self.fg2.GetValue(),'Leg':self.l2.GetValue(), 'Site':self.s2.GetValue(), 'Hole':self.h2.GetValue(), 'Core': self.c2.GetValue(), 'Section': self.sc2.GetValue(), 'Interval': self.int2.GetValue(), 'Abundance': self.ab.GetValue(), 'Preservation': self.pres.GetValue()}
+            self.config = {'Entered By:':self.ent2.GetValue().decode('utf-8'),'Entry Date:':self.dat2.GetValue(),'File Type:':self.ftype,'Fossil Group:':self.fg2.GetValue(),'Leg':self.l2.GetValue(), 'Site':self.s2.GetValue(), 'Hole':self.h2.GetValue(), 'Core': self.c2.GetValue(), 'Section': self.sc2.GetValue(), 'Interval': self.int2.GetValue(), 'Abundance': self.ab.GetValue(), 'Preservation': self.pres.GetValue()}
         else:
-            self.config = {'Entered By:':self.ent2.GetValue(),'Entry Date:':self.dat2.GetValue(),'File Type:':self.ftype,'Fossil Group:':self.fg2.GetValue(),'Formation':self.l2.GetValue(), 'Sample Name':self.s2.GetValue(), 'Geographic Name':self.h2.GetValue(), 'Latitude': self.c2.GetValue(), 'Longitude': self.sc2.GetValue(), 'meter level': self.int2.GetValue(), 'Age':self.age.GetValue(), 'Zone':self.zone.GetValue(), 'Lithology':self.lith.GetValue(), 'Abundance': self.ab.GetValue(), 'Preservation': self.pres.GetValue()}
+            self.config = {'Entered By:':self.ent2.GetValue().decode('utf-8'),'Entry Date:':self.dat2.GetValue(),'File Type:':self.ftype,'Fossil Group:':self.fg2.GetValue(),'Formation':self.l2.GetValue().decode('utf-8'), 'Sample Name':self.s2.GetValue(), 'Geographic Name':self.h2.GetValue().decode('utf-8'), 'Latitude': self.c2.GetValue(), 'Longitude': self.sc2.GetValue(), 'meter level': self.int2.GetValue(), 'Age':self.age.GetValue(), 'Zone':self.zone.GetValue(), 'Lithology':self.lith.GetValue(), 'Abundance': self.ab.GetValue(), 'Preservation': self.pres.GetValue()}
         self.config['Taxa File'] = filedir
         if os.path.exists(self.configfile):
             os.remove(self.configfile)

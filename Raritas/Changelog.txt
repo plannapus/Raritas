@@ -1,3 +1,12 @@
+Version 0.7 (13/07/2018):
+- Alt-clicking a button increments by 10 specimens.
+- New species are added to the original "taxa file".
+- Lists are sorted by name.
+- It is now possible to chose not to put up any buttons, in which case the button "sizer" is made to be of size 0.
+- Accommodated code so that config file can contain non-ASCII characters.
+- Changed behavior of InspectFrame: while we are still in Normal Count Mode, it shows the realtime tally and not just the tally up to the last track change.
+- If the user quits with an unsaved count, the software will prompt to save an unfinished count (works by passing around a boolean 'saved' that is turned to True when performing a 'unfinished' or 'finished' save and to False when performing any other action: adding a species, a specimen, a track or switching to rare count mode).
+
 Version 0.6 (12/01/2017):
 - Modified output file to comply with SOD-OFF version 2.1.
 
@@ -11,11 +20,11 @@ Version 0.5 (06/12/2016):
 
 Version 0.4 (05/09/2016):
 - Modified output file to follow SOD-OFF version 2b1. Added as comment the number of tracks counted.
-- Corrected filepath for help file.
+- Corrected file path for help file.
 
 Version 0.3 (31/08/2015):
 - Added possibility to add a new species during the count.
-- Modified behaviour of ComboBoxes so that it is possible to click twice in a row on same species.
+- Modified behavior of ComboBoxes so that it is possible to click twice in a row on same species.
 - Modified aesthetic of ComboBoxes: now uses default size, but relative position of each combobox change dynamically.
 - Created function ComputeDiv (used 3 times) to shorten code.
 - Program doesn't prompt the user for saving div file after saving main file anymore but does it automatically by appending "Div_" to file name.
