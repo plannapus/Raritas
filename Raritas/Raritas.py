@@ -4,15 +4,21 @@ import os, time, csv, math, sys, re
 import wx
 import wx.html
 import wx.lib.mixins.listctrl as listmix
+import wx.lib.scrolledpanel as wls
 import matplotlib
 matplotlib.use('wxagg')
 import matplotlib.pyplot as plt
 
 class CountingFrame(wx.Frame): # Main Counting window
     def __init__(self, parent, title, config):
-        wx.Frame.__init__(self, parent, size=(1000,1000), title="Raritas")
-        self.panel = wx.Panel(self)
-
+        wx.Frame.__init__(self, parent, size=(200,200), title="Raritas")
+        # Check screen size
+        screenSize = wx.DisplaySize()
+        screenWidth = screenSize[0]
+        screenHeight = screenSize[1]
+        #self.panel = wx.Panel(self)
+        self.panel = wls.ScrolledPanel(self,-1,size=(screenWidth,screenHeight), style=wx.SIMPLE_BORDER|wx.EXPAND)
+        self.panel.SetupScrolling()
         # Instantiating variables
         self.n_track = 1             # Number of Tracks (nb displayed on screen at any time)
         self.last_normal_track = 1   # Last track in normal count mode
@@ -25,12 +31,12 @@ class CountingFrame(wx.Frame): # Main Counting window
         self.saved = False
 
         # Reading taxa file
-        taxafile = csv.reader(open(config['Taxa File'],'rUb'),delimiter='\t')
-        keys = taxafile.next() #Line of column headers
+        taxafile = csv.reader(open(config['Taxa File'],'r'),delimiter='\t')
+        keys = next(taxafile) #Line of column headers
         for i in taxafile:
             b = {}
             for k,v in zip(keys,i):
-                b[k] = v.decode('utf-8')
+                b[k] = v
             self.All.append(b)
         for d in self.All:
             d['species_name'] = d['Genus']+d['GQ']+' '+d['Species']+d['SQ']+' '+d['Subspecies']
@@ -73,7 +79,7 @@ class CountingFrame(wx.Frame): # Main Counting window
         self.button_map = {}
         for i in range(0, N):
             b = wx.Button(self.panel, wx.ID_ANY,name=species_on_button[i], label=abbreviations[i])
-            b.Bind(wx.EVT_LEFT_DOWN, self.BClick)
+            b.Bind(wx.EVT_BUTTON, self.BClick)
             self.button_map[species_on_button[i]] = b
             g1.Add(b,1,wx.ALL|wx.EXPAND,3)
         BigSizer.Add(g1, pos=(0,0), span=(1,1), flag=wx.EXPAND)
@@ -92,7 +98,7 @@ class CountingFrame(wx.Frame): # Main Counting window
             self.list_map[i] = l
             l.SetSelection(-1)
             Gsizer.Add(l)
-        for j in xrange(len(Groups)):
+        for j in range(len(Groups)):
             Gsizer.AddGrowableRow(j)
         Gsizer.AddGrowableCol(1)
         BottomSizer = wx.GridBagSizer(5,5)
@@ -129,7 +135,7 @@ class CountingFrame(wx.Frame): # Main Counting window
         heightR = 300 if os.name=='nt' else 250
         widthB = math.ceil(N/n1)*105 if n1>0 else 0
         widthR = 1050
-        self.SetSize((max([widthB, widthR]),heightB+heightR))
+        self.SetSize((max([widthB, widthR]),heightB+heightR+50))
         self.panel.SetSizer(BigSizer)
         self.panel.Layout()
         minSize = self.GetSize()
@@ -157,10 +163,10 @@ class CountingFrame(wx.Frame): # Main Counting window
             self.All.append(d) # Add the new species to 'self.All'
             widg_to_mod = self.list_map[d['HigherTaxon']] # Modify stroller widgets accordingly
             widg_to_mod.Append(d['species_name'])
-            read_taxafile = csv.reader(open(self.metadata['Taxa File'],'rUb'),delimiter='\t')
-            keys = read_taxafile.next()
+            read_taxafile = csv.reader(open(self.metadata['Taxa File'],'r'),delimiter='\t')
+            keys = next(read_taxafile)
             right_order = [d[k] for k in keys if k in d.keys()]
-            write_taxafile = csv.writer(open(self.metadata['Taxa File'],'ab'),delimiter='\t')
+            write_taxafile = csv.writer(open(self.metadata['Taxa File'],'a'),delimiter='\t')
             write_taxafile.writerow(right_order)
         self.saved = False
         nsd.Destroy()
@@ -169,7 +175,7 @@ class CountingFrame(wx.Frame): # Main Counting window
         button = event.GetEventObject()
         d = button.GetName()
         n = 10 if wx.GetKeyState(wx.WXK_ALT) else 1
-        for i in xrange(n): self.selection.append({'species':d, 'track':self.n_track, 'mode':self.mode})
+        for i in range(n): self.selection.append({'species':d, 'track':self.n_track, 'mode':self.mode})
         self.specimens += n
         if self.specimens > 1:
             sp_text = '%s specimens' % self.specimens
@@ -178,6 +184,8 @@ class CountingFrame(wx.Frame): # Main Counting window
         self.t2.SetLabel(sp_text)
         self.sel.SetValue("\n".join(reversed([k['species'] for k in self.selection])))
         self.saved = False
+        with open(os.path.join(os.path.expanduser('~'),'raritas_debug.txt'), 'w+') as f:
+            f.write(str(vars(self)))
 
     def LSelect(self,event): # What happens when choosing from the list
         d = event.GetString()
@@ -194,28 +202,32 @@ class CountingFrame(wx.Frame): # Main Counting window
             self.sel.SetValue("!Species estimated in rare count mode\n"+"\n".join(reversed([k['species'] for k in self.selection])))
         event.GetEventObject().SetSelection(-1)
         self.saved = False
+        with open(os.path.join(os.path.expanduser('~'),'raritas_debug.txt'), 'w+') as f:
+            f.write(str(vars(self)))
 
     def NextTrack(self, event): #What happens at track change
-    	if self.mode == 'normal': # If still in normal count mode
+        if self.mode == 'normal': # If still in normal count mode
             track_content = [k for k in self.selection if k['track']==self.n_track]
             for i in self.All: # Add everything that was counted on this track to the Normal Count
                 i['Normal Count'] += len([k for k in track_content if k['species'] == i['species_name']])
             self.n_track += 1
-    	if self.mode == 'rare': # If rare count mode
+        if self.mode == 'rare': # If rare count mode
             track_content = [k for k in self.selection if k['track']==self.n_track]
             estimated = 0
             for i in self.All:
                 if i['Estimated']=='*': # Compute the number of estimated discarded taxa
-                    estimated_i = math.ceil(i['Normal Count']/self.last_normal_track)
+                    estimated_i = int(math.ceil(i['Normal Count']/self.last_normal_track))
                     i['Rare Count'] += estimated_i
                     estimated += estimated_i
                 else: # And add the non-discarded one to the count
                     i['Rare Count'] += len([k for k in track_content if k['species'] == i['species_name']])
-            self.specimens += int(estimated) # Add the number of estimated to the total number of specimen counted
+            self.specimens += estimated # Add the number of estimated to the total number of specimen counted
             self.n_track += 1
         self.t2.SetLabel('%s specimens' % self.specimens)
         self.t1.SetLabel('Track %s' % self.n_track)
         self.saved = False
+        with open(os.path.join(os.path.expanduser('~'),'raritas_debug.txt'), 'w+') as f:
+            f.write(str(vars(self)))
 
     def RCM(self,event): # Switching to Rare Count Mode
         list_d =[] # Prepare list of already counted species with their relative abundance for dialog
@@ -241,6 +253,8 @@ class CountingFrame(wx.Frame): # Main Counting window
             self.t1.SetLabel('Track %s' % self.n_track)
             self.b2.Enable(False)
         self.saved = False
+        with open(os.path.join(os.path.expanduser('~'),'raritas_debug.txt'), 'w+') as f:
+            f.write(str(vars(self)))
 
     def Remove(self, event): #Removing last entry
         self.selection.pop()
@@ -248,26 +262,33 @@ class CountingFrame(wx.Frame): # Main Counting window
         self.t2.SetLabel('%s specimens' % self.specimens)
         self.sel.SetValue("\n".join(reversed([k['species'] for k in self.selection])))
         self.saved = False
+        with open(os.path.join(os.path.expanduser('~'),'raritas_debug.txt'), 'w+') as f:
+            f.write(str(vars(self)))
 
     def Continue(self, event): #Load unfinished count
         wildcard = "Tab-separated files (*.csv)|*.csv"
         dlg = wx.FileDialog(self, 'Choose your file', self.dirname, wildcard=wildcard)
         if dlg.ShowModal() == wx.ID_OK:
             openfile = dlg.GetPath()
-            a = csv.reader(open(openfile,'rb'),delimiter='\t')
+            a = csv.reader(open(openfile,'r'),delimiter='\t')
             self.selection = [] # Build back the 'selection' list of dictionaries
             for i in a:
-                if ' estimated' not in i[1]:
-                    self.selection.append({'species':i[1], 'track':int(i[0]), 'mode':i[2]})
-                else: # Flag back the taxa discarded from rare count mode
-                    sp = i[1].split(' estimated')
+                info = i[1]
+                if 'Track' in info:
+                    track = info.split('Track ')
+                    self.n_track = int(track[1])
+                elif ' estimated' in info: # Flag back the taxa discarded from rare count mode
+                    sp = info.split(' estimated')
                     for j in [k for k in self.All if k['species_name']==sp[0]]:
                         j['Estimated'] = '*'
                     for i,b in self.button_map.items():
                         if i in sp: b.Enable(False)
-            self.n_track = max([k['track'] for k in self.selection])
+                else:
+                    self.selection.append({'track':int(i[0]), 'species':info, 'mode':i[2]})
+            if self.n_track < max([k['track'] for k in self.selection]):
+                self.n_track = max([k['track'] for k in self.selection])
             for i in self.All: # Add back the taxa found in normal count mode
-                i['Normal Count'] = len([k for k in self.selection if k['species'] == i['species_name'] and k['mode']=='normal'])
+                i['Normal Count'] = len([k for k in self.selection if k['species'] == i['species_name'] and k['mode']=='normal' and k['track']<self.n_track])
             estimated = 0
             if 'rare' in [k['mode'] for k in self.selection]: # Add back the taxa found in rare count mode, including the estimated ones.
                 self.mode = 'rare'
@@ -275,13 +296,12 @@ class CountingFrame(wx.Frame): # Main Counting window
                 self.last_normal_track = max([k['track'] for k in self.selection if k['mode']=='normal'])
                 for i in self.All:
                     if i['Estimated']=='*':
-                        estimated_i = math.ceil(i['Normal Count']/self.last_normal_track)*(self.n_track-self.last_normal_track)
+                        estimated_i = int(math.ceil(i['Normal Count']/self.last_normal_track))*(self.n_track-self.last_normal_track-1)
                         i['Rare Count'] += estimated_i
                         estimated += estimated_i
                     else:
-                        i['Rare Count'] = len([k for k in self.selection if k['species'] == i['species_name'] and k['mode']=='rare'])
+                        i['Rare Count'] = len([k for k in self.selection if k['species'] == i['species_name'] and k['mode']=='rare' and k['track']<self.n_track])
             self.specimens = len(self.selection) + int(estimated)
-            self.n_track += 1
             self.t2.SetLabel('%s specimens' % self.specimens)
             self.sel.SetValue("\n".join(reversed([k['species'] for k in self.selection])))
             self.t1.SetLabel('Track %s' % self.n_track)
@@ -293,12 +313,13 @@ class CountingFrame(wx.Frame): # Main Counting window
         dlg = wx.FileDialog(self, 'Save unfinished count', self.dirname, wildcard=wildcard, style=wx.FD_SAVE)
         if dlg.ShowModal() == wx.ID_OK:
             savefile1 = dlg.GetPath()
-            a = csv.writer(open(savefile1,'wb'),delimiter='\t')
+            a = csv.writer(open(savefile1,'w'),delimiter='\t')
             for i in self.selection:
                 a.writerow([i['track'],i['species'],i['mode']])
             if self.mode=='rare':
                 for i in [k['species_name'] for k in self.All if k['Estimated']=='*']:
                     a.writerow(['',i+' estimated',''])
+            a.writerow(['','Track %d' % self.n_track])
         self.saved = True
         dlg.Destroy()
 
@@ -307,9 +328,11 @@ class CountingFrame(wx.Frame): # Main Counting window
         dlg = wx.FileDialog(self, 'Choose your file for count data', self.dirname, wildcard=wildcard, style=wx.FD_SAVE)
         if dlg.ShowModal() == wx.ID_OK:
             savefile2 = dlg.GetPath()
-            a = csv.writer(open(savefile2,'wb'),delimiter='\t')
+            a = csv.writer(open(savefile2,'w'),delimiter='\t')
             ord_keys = ['Genus','GQ','Species','SQ','Subspecies','Author','empty','HigherTaxon','Comment','empty', 'Total']
             pretty_keys = ['Genus:','GQ:','Species:','SQ:','Subspecies:','Author:','Taxon Code:','Higher Taxon:','Taxon Comments:','', '']
+            if self.n_track in [k['track'] for k in self.selection]:
+                self.NextTrack(event)
             if self.metadata['File Type:']=='O':
                 a.writerow(['SOD-OFF v.:','2.1','File Type:', 'O', 'Fossil Group:', self.metadata['Fossil Group:'],'','','','',''])
                 a.writerow(['Source ID:','','Source Name:','','Source Citation:','','','','','Site:', self.metadata['Site']])
@@ -327,33 +350,16 @@ class CountingFrame(wx.Frame): # Main Counting window
                 a.writerow(['Geographic ID','','Geographic Source:','', 'Geographic Name:',self.metadata['Geographic Name'].encode('utf-8') , '', '', '', 'Meter level:', self.metadata['meter level']])
                 a.writerow(['Latitude:', self.metadata['Latitude'], 'Longitude:',self.metadata['Longitude'], 'File Creation Method:', 'Raritas', '', '','','Age:', self.metadata['Age']])
                 a.writerow(['Occurrence Data Type:', 'C', 'Keys:', '', '', '', '', '', '', 'Zone:', self.metadata['Zone']])
-                a.writerow(['Comments:', str(self.n_track)+' tracks observed', '', '', '', '', '', '', '', 'Lithology:',self.metadata['Lithology']])
+                a.writerow(['Comments:', str(self.n_track-1)+' tracks observed', '', '', '', '', '', '', '', 'Lithology:',self.metadata['Lithology']])
                 a.writerow(['', '', '', '', '', '', '', '', '', 'Abundance:', self.metadata['Abundance']])
                 a.writerow(['', '', '', '', '', '', '', '', '', 'Preservation:', self.metadata['Preservation']])
             a.writerow(pretty_keys)
-            if self.n_track in [k['track'] for k in self.selection]:
-                if self.mode == 'normal':
-                    track_content = [k for k in self.selection if k['track']==self.n_track]
-                    for i in self.All:
-                        i['Normal Count'] += len([k for k in track_content if k['species'] == i['species_name']])
-                if self.mode == 'rare':
-                    track_content = [k for k in self.selection if k['track']==self.n_track]
-                    estimated = 0
-                    for i in self.All:
-                        if i['Estimated']=='*':
-                            estimated_i = math.ceil(i['Normal Count']/self.last_normal_track)
-                            i['Rare Count'] += estimated_i
-                            estimated += estimated_i
-                            i['Comment'] = 'Estimated based on %i tracks' % self.last_normal_track
-                        else:
-                            i['Rare Count'] += len([k for k in track_content if k['species'] == i['species_name']])
-                    self.specimens += estimated
             for i in self.All:
                 i['Total'] = i['Normal Count']+i['Rare Count']
                 i['empty'] = ''
-                a.writerow([i[k].encode('utf-8') if type(i[k]) is unicode else i[k] for k in ord_keys])
+                a.writerow([i[k] for k in ord_keys])
             savefile3 = os.path.join(os.path.dirname(savefile2),'Div_'+os.path.basename(savefile2)) # Also saves a file containing the species accumulation curve
-            b = csv.writer(open(savefile3,'wb'),delimiter='\t')
+            b = csv.writer(open(savefile3,'w'),delimiter='\t')
             b.writerow(('Specimens','Species'))
             x,y = self.ComputeDiv(self.selection,self.All,self.last_normal_track)
             p = zip(x,y)
@@ -366,7 +372,7 @@ class CountingFrame(wx.Frame): # Main Counting window
         x = [0,]
         y = [0,]
         sp = []
-        for i in xrange(len(selection)-1):
+        for i in range(len(selection)-1):
             x.append(x[-1]+1)
             if selection[i]['species'] not in sp:
                 sp.append(selection[i]['species'])
@@ -386,12 +392,37 @@ class CountingFrame(wx.Frame): # Main Counting window
 
         return([x,y])
 
+    def ComputeTrackChanges(self,selection,All,last_normal_track):
+        trackchange = [0,]
+        tracks = [1,]
+        for i in range(len(selection)):
+            if selection[i]['track'] not in tracks:
+                if selection[i]['mode']=='normal':
+                    trackchange.append(i)
+                    tracks.append(tracks[-1]+1)
+                else:
+                    EstimatedSpecimens = math.ceil(sum([k['Normal Count'] for k in All if k['Estimated']=='*'])/last_normal_track)
+                    trackchange.append(i+EstimatedSpecimens*(tracks[-1]-last_normal_track))
+                    tracks.append(tracks[-1]+1)
+
+        return(trackchange)
+
     def SAC(self, event): # Plot species accumulation curve (uses matplotlib)
         x,y = self.ComputeDiv(self.selection,self.All,self.last_normal_track)
-        plt.plot(x, y, color='red', marker='o')
+        tr = self.ComputeTrackChanges(self.selection, self.All,self.last_normal_track)
+        X = []
+        Y = []
+        for i in range(len(x)):
+            if y[i] not in Y:
+                Y.append(y[i])
+                X.append(x[i]) 
+
+        plt.plot(x, y, color='red')
+        plt.scatter(X, Y, marker='o', color='red')
         plt.ylabel('Number of Species')
         plt.xlabel('Number of Specimens')
         plt.title('Collector\'s curve')
+        plt.vlines(x=tr, ymin=-1, ymax=y[-1]+1, ls='dotted')
         plt.show()
         self.Show(True)
 
@@ -403,7 +434,7 @@ class CountingFrame(wx.Frame): # Main Counting window
         dlg = wx.FileDialog(self, 'Choose your file', self.dirname, wildcard=wildcard, style=wx.FD_SAVE)
         if dlg.ShowModal() == wx.ID_OK:
             savefile3 = dlg.GetPath()
-            a = csv.writer(open(savefile3,'wb'),delimiter='\t')
+            a = csv.writer(open(savefile3,'w'),delimiter='\t')
             a.writerow(('Specimens','Species'))
             x,y = self.ComputeDiv(self.selection,self.All,self.last_normal_track)
             p = zip(x,y)
@@ -490,11 +521,11 @@ class InspectFrame(wx.Frame, listmix.ColumnSorterMixin): # Window for count insp
                 list_d.append((i['species_name'],i['Normal Count'], i['Rare Count'], total, str(round(percent,3))+' %'))
         list_d.sort(key=lambda x:x[3], reverse=True)
         for data in list_d:
-            self.list_ctrl.InsertStringItem(self.index, data[0])
-            self.list_ctrl.SetStringItem(self.index, 1, str(data[1]))
-            self.list_ctrl.SetStringItem(self.index, 2, str(data[2]))
-            self.list_ctrl.SetStringItem(self.index, 3, str(data[3]))
-            self.list_ctrl.SetStringItem(self.index, 4, data[4])
+            self.list_ctrl.InsertItem(self.index, data[0])
+            self.list_ctrl.SetItem(self.index, 1, str(data[1]))
+            self.list_ctrl.SetItem(self.index, 2, str(data[2]))
+            self.list_ctrl.SetItem(self.index, 3, str(data[3]))
+            self.list_ctrl.SetItem(self.index, 4, data[4])
             self.index += 1
         self.Show(True)
 
@@ -535,13 +566,13 @@ class StartingFrame(wx.Frame): # Start window that collects metadata
         self.ftype = 'O' if form.f.GetValue()=='Deep-Sea Core' else 'L'
         #Preparing files
         self.config = {}
-        self.configfile = os.path.join(os.path.expanduser('~'),"bugconfig.txt")
+        self.configfile = os.path.join(os.path.expanduser('~'),"raritas_config.txt")
         self.filename = ''
         if os.path.exists(self.configfile):
-            a = csv.reader(open(self.configfile,'rb'),delimiter='\t')
+            a = csv.reader(open(self.configfile,'r'),delimiter='\t')
             for i in a:
                 if len(i)>1:
-        		  self.config[i[0]] = i[1]
+                  self.config[i[0]] = i[1]
         #Create Menubar
         menubar = wx.MenuBar()
         File = wx.Menu()
@@ -644,7 +675,7 @@ class StartingFrame(wx.Frame): # Start window that collects metadata
         if self.config.get('Taxa File',False): self.filedir.SetValue(self.config['Taxa File'])
         self.StartingPanel.SetSizerAndFit(topSizer)
         self.sizer = wx.BoxSizer(wx.VERTICAL)
-        self.sizer.Add(self.StartingPanel, 1, wx.EXPAND|wx.ALIGN_CENTER)
+        self.sizer.Add(self.StartingPanel, 1, wx.ALIGN_CENTER)
         self.SetSizerAndFit(self.sizer)
         self.Show(True)
 
@@ -659,13 +690,13 @@ class StartingFrame(wx.Frame): # Start window that collects metadata
         # Save metadata
         filedir = self.filedir.GetValue()
         if self.ftype=='O':
-            self.config = {'Entered By:':self.ent2.GetValue().decode('utf-8'),'Entry Date:':self.dat2.GetValue(),'File Type:':self.ftype,'Fossil Group:':self.fg2.GetValue(),'Leg':self.l2.GetValue(), 'Site':self.s2.GetValue(), 'Hole':self.h2.GetValue(), 'Core': self.c2.GetValue(), 'Section': self.sc2.GetValue(), 'Interval': self.int2.GetValue(), 'Abundance': self.ab.GetValue(), 'Preservation': self.pres.GetValue()}
+            self.config = {'Entered By:':self.ent2.GetValue(),'Entry Date:':self.dat2.GetValue(),'File Type:':self.ftype,'Fossil Group:':self.fg2.GetValue(),'Leg':self.l2.GetValue(), 'Site':self.s2.GetValue(), 'Hole':self.h2.GetValue(), 'Core': self.c2.GetValue(), 'Section': self.sc2.GetValue(), 'Interval': self.int2.GetValue(), 'Abundance': self.ab.GetValue(), 'Preservation': self.pres.GetValue()}
         else:
-            self.config = {'Entered By:':self.ent2.GetValue().decode('utf-8'),'Entry Date:':self.dat2.GetValue(),'File Type:':self.ftype,'Fossil Group:':self.fg2.GetValue(),'Formation':self.l2.GetValue().decode('utf-8'), 'Sample Name':self.s2.GetValue(), 'Geographic Name':self.h2.GetValue().decode('utf-8'), 'Latitude': self.c2.GetValue(), 'Longitude': self.sc2.GetValue(), 'meter level': self.int2.GetValue(), 'Age':self.age.GetValue(), 'Zone':self.zone.GetValue(), 'Lithology':self.lith.GetValue(), 'Abundance': self.ab.GetValue(), 'Preservation': self.pres.GetValue()}
+            self.config = {'Entered By:':self.ent2.GetValue(),'Entry Date:':self.dat2.GetValue(),'File Type:':self.ftype,'Fossil Group:':self.fg2.GetValue(),'Formation':self.l2.GetValue(), 'Sample Name':self.s2.GetValue(), 'Geographic Name':self.h2.GetValue(), 'Latitude': self.c2.GetValue(), 'Longitude': self.sc2.GetValue(), 'meter level': self.int2.GetValue(), 'Age':self.age.GetValue(), 'Zone':self.zone.GetValue(), 'Lithology':self.lith.GetValue(), 'Abundance': self.ab.GetValue(), 'Preservation': self.pres.GetValue()}
         self.config['Taxa File'] = filedir
         if os.path.exists(self.configfile):
             os.remove(self.configfile)
-        a = csv.writer(open(self.configfile,'wb'),delimiter='\t')
+        a = csv.writer(open(self.configfile,'w'),delimiter='\t')
         for i, j in self.config.items():
             a.writerow([i,j])
         # Launch Counting window

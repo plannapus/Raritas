@@ -1,3 +1,10 @@
+Version 0.8:
+- Added scrollers (duh).
+- Shift to Python 3.
+- Added data on number of tracks in unfinished count files.
+- Modified SAC to show track changes and only dots when new species are added.
+- Corrected button event handler: no lag anymore, one can now click compulsively without issues.
+
 Version 0.7 (13/07/2018):
 - Alt-clicking a button increments by 10 specimens.
 - New species are added to the original "taxa file".
