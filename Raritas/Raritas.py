@@ -184,8 +184,8 @@ class CountingFrame(wx.Frame): # Main Counting window
         self.t2.SetLabel(sp_text)
         self.sel.SetValue("\n".join(reversed([k['species'] for k in self.selection])))
         self.saved = False
-        with open(os.path.join(os.path.expanduser('~'),'raritas_debug.txt'), 'w+') as f:
-            f.write(str(vars(self)))
+        # with open(os.path.join(os.path.expanduser('~'),'raritas_debug.txt'), 'w+') as f:
+        #     f.write(str(vars(self)))
 
     def LSelect(self,event): # What happens when choosing from the list
         d = event.GetString()
@@ -202,8 +202,8 @@ class CountingFrame(wx.Frame): # Main Counting window
             self.sel.SetValue("!Species estimated in rare count mode\n"+"\n".join(reversed([k['species'] for k in self.selection])))
         event.GetEventObject().SetSelection(-1)
         self.saved = False
-        with open(os.path.join(os.path.expanduser('~'),'raritas_debug.txt'), 'w+') as f:
-            f.write(str(vars(self)))
+        # with open(os.path.join(os.path.expanduser('~'),'raritas_debug.txt'), 'w+') as f:
+        #     f.write(str(vars(self)))
 
     def NextTrack(self, event): #What happens at track change
         if self.mode == 'normal': # If still in normal count mode
@@ -226,8 +226,8 @@ class CountingFrame(wx.Frame): # Main Counting window
         self.t2.SetLabel('%s specimens' % self.specimens)
         self.t1.SetLabel('Track %s' % self.n_track)
         self.saved = False
-        with open(os.path.join(os.path.expanduser('~'),'raritas_debug.txt'), 'w+') as f:
-            f.write(str(vars(self)))
+        # with open(os.path.join(os.path.expanduser('~'),'raritas_debug.txt'), 'w+') as f:
+        #     f.write(str(vars(self)))
 
     def RCM(self,event): # Switching to Rare Count Mode
         list_d =[] # Prepare list of already counted species with their relative abundance for dialog
@@ -253,8 +253,8 @@ class CountingFrame(wx.Frame): # Main Counting window
             self.t1.SetLabel('Track %s' % self.n_track)
             self.b2.Enable(False)
         self.saved = False
-        with open(os.path.join(os.path.expanduser('~'),'raritas_debug.txt'), 'w+') as f:
-            f.write(str(vars(self)))
+        # with open(os.path.join(os.path.expanduser('~'),'raritas_debug.txt'), 'w+') as f:
+        #     f.write(str(vars(self)))
 
     def Remove(self, event): #Removing last entry
         self.selection.pop()
@@ -262,8 +262,8 @@ class CountingFrame(wx.Frame): # Main Counting window
         self.t2.SetLabel('%s specimens' % self.specimens)
         self.sel.SetValue("\n".join(reversed([k['species'] for k in self.selection])))
         self.saved = False
-        with open(os.path.join(os.path.expanduser('~'),'raritas_debug.txt'), 'w+') as f:
-            f.write(str(vars(self)))
+        # with open(os.path.join(os.path.expanduser('~'),'raritas_debug.txt'), 'w+') as f:
+        #     f.write(str(vars(self)))
 
     def Continue(self, event): #Load unfinished count
         wildcard = "Tab-separated files (*.csv)|*.csv"
