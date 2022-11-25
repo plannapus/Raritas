@@ -336,7 +336,7 @@ class CountingFrame(wx.Frame): # Main Counting window
             if self.metadata['File Type:']=='O':
                 a.writerow(['SOD-OFF v.:','2.1','File Type:', 'O', 'Fossil Group:', self.metadata['Fossil Group:'],'','','','',''])
                 a.writerow(['Source ID:','','Source Name:','','Source Citation:','','','','','Site:', self.metadata['Site']])
-                a.writerow(['Entered By:', self.metadata['Entered By:'].encode('utf-8'), 'Entry Date:',self.metadata['Entry Date:'],'Checked By:', '','Check Date:','','','Hole:', self.metadata['Hole']])
+                a.writerow(['Entered By:', self.metadata['Entered By:'], 'Entry Date:',self.metadata['Entry Date:'],'Checked By:', '','Check Date:','','','Hole:', self.metadata['Hole']])
                 a.writerow(['Leg Info:', self.metadata['Leg'],'Leg Qualifier:', '', '', '', '', '', '', 'Core:', self.metadata['Core']])
                 a.writerow(['', '', '', '', 'File Creation Method:', 'Raritas', '', '', '', 'Section:', self.metadata['Section']])
                 a.writerow(['Occurrences Data Type:', 'C', 'Keys:', '', '', '', '', '', '', 'Interval top:', self.metadata['Interval']])
@@ -345,9 +345,9 @@ class CountingFrame(wx.Frame): # Main Counting window
                 a.writerow(['', '', '', '', '', '', '', '', '', 'Preservation:', self.metadata['Preservation']])
             elif self.metadata['File Type:']=='L':
                 a.writerow(['SOD-OFF v.:','2.1','File Type:', 'L', 'Fossil Group:', self.metadata['Fossil Group:'],'','','','',''])
-                a.writerow(['Source ID:','','Source Name:','','Source Citation:','','','','','Formation:', self.metadata['Formation'].encode('utf-8')])
-                a.writerow(['Entered By:', self.metadata['Entered By:'].encode('utf-8'),'Entry Date:', self.metadata['Entry Date:'],'Checked By:', '', 'Checked Date:','','','Sample Name:', self.metadata['Sample Name']])
-                a.writerow(['Geographic ID','','Geographic Source:','', 'Geographic Name:',self.metadata['Geographic Name'].encode('utf-8') , '', '', '', 'Meter level:', self.metadata['meter level']])
+                a.writerow(['Source ID:','','Source Name:','','Source Citation:','','','','','Formation:', self.metadata['Formation']])
+                a.writerow(['Entered By:', self.metadata['Entered By:'],'Entry Date:', self.metadata['Entry Date:'],'Checked By:', '', 'Checked Date:','','','Sample Name:', self.metadata['Sample Name']])
+                a.writerow(['Geographic ID','','Geographic Source:','', 'Geographic Name:',self.metadata['Geographic Name'] , '', '', '', 'Meter level:', self.metadata['meter level']])
                 a.writerow(['Latitude:', self.metadata['Latitude'], 'Longitude:',self.metadata['Longitude'], 'File Creation Method:', 'Raritas', '', '','','Age:', self.metadata['Age']])
                 a.writerow(['Occurrence Data Type:', 'C', 'Keys:', '', '', '', '', '', '', 'Zone:', self.metadata['Zone']])
                 a.writerow(['Comments:', str(self.n_track-1)+' tracks observed', '', '', '', '', '', '', '', 'Lithology:',self.metadata['Lithology']])

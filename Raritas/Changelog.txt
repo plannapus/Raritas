@@ -1,4 +1,4 @@
-Version 0.8:
+Version 0.8 (25/11/2022):
 - Added scrollers (duh).
 - Shift to Python 3.
 - Added data on number of tracks in unfinished count files.
